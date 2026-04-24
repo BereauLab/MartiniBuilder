@@ -18,6 +18,10 @@ export class MoleculeMapping {
     this.virtualSites = [];      // array of bead indices
     this.vsConnections = {};     // { vsBeadIdx: [neighborBeadIdx, ...] }
     this.bondBeadCandidateIdx = null;
+    this.angles = [];            // [[a, b, c], ...]
+    this.dihedrals = [];         // [[a, b, c, d], ...]
+    this.angleMode = null;       // 'angle' | 'dihedral' | null
+    this.angleCandidates = [];   // bead indices being built
   }
 
   setRDKit(RDKit) {
@@ -31,6 +35,10 @@ export class MoleculeMapping {
   setActiveSection(name) {
     this.activeSection = name;
     this.bondBeadCandidateIdx = null;
+    if (name !== 'angles') {
+      this.angleMode = null;
+      this.angleCandidates = [];
+    }
   }
 
   async loadMappingRules(file) {
@@ -55,6 +63,10 @@ export class MoleculeMapping {
     this.virtualSites = [];
     this.vsConnections = {};
     this.bondBeadCandidateIdx = null;
+    this.angles = [];
+    this.dihedrals = [];
+    this.angleMode = null;
+    this.angleCandidates = [];
     this._parseCoords(data);
     if (this.rdkit) {
       if (this.molecule) this.molecule.delete();
@@ -142,6 +154,15 @@ export class MoleculeMapping {
     } else if (this.bondBeadCandidateIdx !== null && this.bondBeadCandidateIdx > idx) {
       this.bondBeadCandidateIdx--;
     }
+    this.angles = this.angles
+      .filter(a => !a.includes(idx))
+      .map(a => a.map(i => i > idx ? i - 1 : i));
+    this.dihedrals = this.dihedrals
+      .filter(d => !d.includes(idx))
+      .map(d => d.map(i => i > idx ? i - 1 : i));
+    this.angleCandidates = this.angleCandidates
+      .filter(i => i !== idx)
+      .map(i => i > idx ? i - 1 : i);
     // Recompute shared flags and type assignments for all remaining beads
     this.beads.forEach((_, i) => this.updateBeadProperties(i));
   }
@@ -192,6 +213,36 @@ export class MoleculeMapping {
   clearBondCandidate() {
     this.bondBeadCandidateIdx = null;
   }
+
+  // ── Angle / dihedral management ────────────────────────────────────────────
+
+  setAngleMode(mode) {
+    this.angleMode = this.angleMode === mode ? null : mode;
+    this.angleCandidates = [];
+  }
+
+  toggleAngleBead(beadIdx) {
+    if (this.angleMode === null) return;
+    const pos = this.angleCandidates.indexOf(beadIdx);
+    if (pos !== -1) {
+      this.angleCandidates.splice(pos, 1);
+      return;
+    }
+    this.angleCandidates.push(beadIdx);
+    const needed = this.angleMode === 'angle' ? 3 : 4;
+    if (this.angleCandidates.length === needed) {
+      if (this.angleMode === 'angle') this.angles.push([...this.angleCandidates]);
+      else this.dihedrals.push([...this.angleCandidates]);
+      this.angleCandidates = [];
+    }
+  }
+
+  clearAngleCandidates() {
+    this.angleCandidates = [];
+  }
+
+  deleteAngleAt(i) { this.angles.splice(i, 1); }
+  deleteDihedralAt(i) { this.dihedrals.splice(i, 1); }
 
   // ── Virtual site management ────────────────────────────────────────────────
 
@@ -313,6 +364,87 @@ export class MoleculeMapping {
     this.bonds = tentativeBonds.filter(({ a, b }) =>
       !this.virtualSites.includes(a) && !this.virtualSites.includes(b)
     );
+
+    // For each VS constructed by exactly 4 beads, add the shorter diagonal
+    // constraint between the non-adjacent pair to prevent ring shear.
+    const bondKeySet = new Set(this.bonds.map(({ a, b }) => `${a}-${b}`));
+    this.virtualSites.forEach(vsIdx => {
+      const cs = this.vsConnections[vsIdx] || [];
+      if (cs.length !== 4) return;
+      const diagonals = [];
+      for (let i = 0; i < 4; i++) {
+        for (let j = i + 1; j < 4; j++) {
+          const key = `${Math.min(cs[i], cs[j])}-${Math.max(cs[i], cs[j])}`;
+          if (!bondKeySet.has(key)) diagonals.push([cs[i], cs[j]]);
+        }
+      }
+      if (diagonals.length === 0) return;
+      const shortest = diagonals.reduce((best, [p, q]) => {
+        const cogP = this.beads[p]?.cog, cogQ = this.beads[q]?.cog;
+        if (!cogP || !cogQ) return best;
+        const d = Math.hypot(cogP.x - cogQ.x, cogP.y - cogQ.y, cogP.z - cogQ.z);
+        return d < best.d ? { d, pair: [p, q] } : best;
+      }, { d: Infinity, pair: null });
+      if (!shortest.pair) return;
+      const [p, q] = shortest.pair;
+      const key = `${Math.min(p, q)}-${Math.max(p, q)}`;
+      this.bonds.push({ a: Math.min(p, q), b: Math.max(p, q), constraint: false });
+      bondKeySet.add(key);
+    });
+  }
+
+  autoAssignAnglesAndDihedrals() {
+    this.angles = [];
+    this.dihedrals = [];
+
+    // Build adjacency from CG bonds (VS beads have no mass and no bonded angles)
+    const n = this.beads.length;
+    const adj = Array.from({ length: n }, () => []);
+    const bondKeySet = new Set();
+    this.bonds.forEach(({ a, b }) => {
+      adj[a].push(b);
+      adj[b].push(a);
+      bondKeySet.add(`${Math.min(a, b)}-${Math.max(a, b)}`);
+    });
+    const hasBond = (a, b) => bondKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
+
+    // Angles: every path A–B–C where A–C is not directly bonded (skip rigid triangles)
+    const angleSet = new Set();
+    for (let b = 0; b < n; b++) {
+      const nb = adj[b];
+      for (let i = 0; i < nb.length - 1; i++) {
+        for (let j = i + 1; j < nb.length; j++) {
+          const a = nb[i], c = nb[j];
+          if (hasBond(a, c)) continue;
+          const key = `${Math.min(a, c)}-${b}-${Math.max(a, c)}`;
+          if (!angleSet.has(key)) { angleSet.add(key); this.angles.push([a, b, c]); }
+        }
+      }
+    }
+
+    // Improper dihedrals: beads with ≥3 bonds that contain aromatic atoms
+    if (!this.molJson) return;
+    const molObj = this.molJson.molecules[0];
+    const aromaticSet = new Set(
+      molObj.extensions?.find(e => e.name === 'rdkitRepresentation')?.aromaticAtoms || []
+    );
+    const beadAromatic = this.beads.map(bead =>
+      bead.atom_indices.some(aIdx => aromaticSet.has(aIdx))
+    );
+    const dihSet = new Set();
+    for (let b = 0; b < n; b++) {
+      const nb = adj[b];
+      if (nb.length < 3 || !beadAromatic[b]) continue;
+      for (let i = 0; i < nb.length - 2; i++) {
+        for (let j = i + 1; j < nb.length - 1; j++) {
+          for (let k = j + 1; k < nb.length; k++) {
+            const [n1, n2, n3] = [nb[i], nb[j], nb[k]];
+            const key = `${n1}-${b}-${n2}-${n3}`;
+            if (!dihSet.has(key)) { dihSet.add(key); this.dihedrals.push([n1, b, n2, n3]); }
+          }
+        }
+      }
+    }
   }
 
   _maxIndependentSet(candidates, adjMap) {
