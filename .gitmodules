@@ -1,0 +1,3 @@
+[submodule "bead-types/M3-Bible"]
+	path = bead-types/M3-Bible
+	url = https://github.com/Martini-Force-Field-Initiative/M3-Bible.git

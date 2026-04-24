@@ -1,0 +1,714 @@
+{
+  "O0b2Hnu": [
+    "W"
+  ],
+  "C2b2Hnu,C2b1Hnu,C1b3Hnu,C1b2Hnu": [
+    "C4"
+  ],
+  "C2b1Hnu,C1b3Hnu,C1b2Hnu": [
+    "SC4"
+  ],
+  "C1b2Hnu,C1b2Hnu": [
+    "TC4"
+  ],
+  "C2b2Hnu,C2b0Hnu,C1b3Hnu,C1b1Hnu": [
+    "C6"
+  ],
+  "C2b0Hnu,C1b3Hnu,C1b1Hnu": [
+    "SC6"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu,O1b1Hnu": [
+    "P1"
+  ],
+  "C3b1Hnu,C1b3Hnu,C1b3Hnu,O1b1Hnu": [
+    "SN6",
+    "P1"
+  ],
+  "C2b2Hnu,C1b3Hnu,O1b1Hnu": [
+    "SP1",
+    "SN6r"
+  ],
+  "C1b3Hnu,O1b1Hnu": [
+    "SP2r"
+  ],
+  "C3b1Hnu,C2b1Hnu,C1b3Hnu,C1b3Hnu,O1b0Hnu": [
+    "N4a"
+  ],
+  "C2b2Hnu,C2b1Hnu,C1b3Hnu,O1b0Hnu": [
+    "N5a"
+  ],
+  "C2b1Hnu,C1b3Hnu,O1b0Hnu": [
+    "SN5a"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu,C1b3Hnu": [
+    "C1"
+  ],
+  "C3b1Hnu,C1b3Hnu,C1b3Hnu,C1b3Hnu": [
+    "C2",
+    "SC1"
+  ],
+  "C2b2Hnu,C1b3Hnu,C1b3Hnu": [
+    "SC2",
+    "SC1"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b2Hnu": [
+    "SC3",
+    "SC1",
+    "SC2"
+  ],
+  "C1b3Hnu,C1b3Hnu": [
+    "TC2"
+  ],
+  "C2b1Hnu,C1b3Hnu,C1b3Hnu,N3b0Hnu,O1b0Hnu": [
+    "P3a"
+  ],
+  "C3b0Hnu,C2b2Hnu,C1b3Hnu,N1b2Hnu,O1b0Hnu": [
+    "P5"
+  ],
+  "C3b0Hnu,C1b3Hnu,N1b2Hnu,O1b0Hnu": [
+    "SP5"
+  ],
+  "C2b1Hnu,N1b2Hnu,O1b0Hnu": [
+    "SP6r"
+  ],
+  "C3b0Hnu,C2b2Hnu,C1b3Hnu,O1b1Hnu,O1b0Hnu": [
+    "P2"
+  ],
+  "C3b0Hnu,C1b3Hnu,O1b1Hnu,O1b0Hnu": [
+    "SP2"
+  ],
+  "C2b1Hnu,C2b1Hnu,C1b2Hnu,C1b2Hnu": [
+    "C5"
+  ],
+  "C2b2Hnu,C2b1Hnu,C1b2Hnu,O1b1Hnu": [
+    "P1"
+  ],
+  "C3b0Hnu,C1b3Hnu,C1b3Hnu,O2b0Hnu,O1b0Hnu": [
+    "N4"
+  ],
+  "C2b1Hnu,C1b3Hnu,O2b0Hnu,O1b0Hnu": [
+    "SN4"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu,Cl1b0Hnu": [
+    "X3"
+  ],
+  "C4b0Hnu,Cl1b0Hnu,Cl1b0Hnu,Cl1b0Hnu,Cl1b0Hnu": [
+    "X1"
+  ],
+  "Br1b0Hnu,C2b2Hnu,C2b2Hnu,C1b3Hnu": [
+    "X1"
+  ],
+  "C2b2Hnu,C1b3Hnu,I1b0Hnu": [
+    "X1"
+  ],
+  "C3b1Hnu,Cl1b0Hnu,Cl1b0Hnu,Cl1b0Hnu": [
+    "X2"
+  ],
+  "C3b1Hnu,C1b3Hnu,Cl1b0Hnu,Cl1b0Hnu": [
+    "X3h"
+  ],
+  "C2b2Hnu,C2b2Hnu,Cl1b0Hnu,Cl1b0Hnu": [
+    "X4h"
+  ],
+  "C2b2Hnu,C1b3Hnu,Cl1b0Hnu": [
+    "SX3"
+  ],
+  "C2b2Hnu,Cl1b0Hnu,Cl1b0Hnu": [
+    "SX2"
+  ],
+  "Br1b0Hnu,C2b2Hnu,C1b3Hnu": [
+    "SX1r"
+  ],
+  "C1b3Hnu,I1b0Hnu": [
+    "SX1"
+  ],
+  "C1b3Hnu,Cl1b0Hnu": [
+    "TX3"
+  ],
+  "Br1b0Hnu,C1b3Hnu": [
+    "TX2"
+  ],
+  "C3b0Hnu,C2b2Hnu,C1b3Hnu,C1b3Hnu,O1b0Hnu": [
+    "N4a"
+  ],
+  "C3b0Hnu,C1b3Hnu,C1b3Hnu,O1b0Hnu": [
+    "SN5a"
+  ],
+  "C2b0Hnu,C1b3Hnu,N1b0Hnu": [
+    "SN5ah"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu,S1b1Hnu": [
+    "C6"
+  ],
+  "C1b3Hnu,C1b3Hnu,S2b0Hnu": [
+    "SC6"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu,N1b2Hnu": [
+    "N6d"
+  ],
+  "C2b2Hnu,C1b3Hnu,N1b2Hnu": [
+    "SN6d",
+    "TN6d"
+  ],
+  "C1b3Hnu,N1b2Hnu": [
+    "TN6d"
+  ],
+  "C1b3Hnu,C1b3Hnu,N2b1Hnu": [
+    "SN3"
+  ],
+  "C1b3Hnu,C1b3Hnu,C1b3Hnu,N3b0Hnu": [
+    "SN3a"
+  ],
+  "C3b0Hnu,C2b2Hnu,N1b2Hnu,O1b1Hnu,O1b0Hnu": [
+    "P6"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu": [
+    "SC2"
+  ],
+  "C2b2Hnu,C2b0Hnu,C1b1Hnu": [
+    "SC6"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b2Hnu,C1b3Hnu": [
+    "C1"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b0Hnu,C1b1Hnu": [
+    "C6"
+  ],
+  "C2b2Hnu,C2b2Hnu,O1b1Hnu": [
+    "SP1"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b2Hnu,O1b1Hnu": [
+    "P1"
+  ],
+  "C2b2Hnu,C1b3Hnu": [
+    "TC3",
+    "TC2"
+  ],
+  "C2b2Hnu,C2b1Hnu,O1b0Hnu": [
+    "SN6a"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b1Hnu,O1b0Hnu": [
+    "N6a"
+  ],
+  "C2b2Hnu,C2b1Hnu,C1b2Hnu": [
+    "SC4"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b1Hnu,C1b2Hnu": [
+    "C4h",
+    "C4"
+  ],
+  "C2b1Hnu,C2b1Hnu,C1b3Hnu": [
+    "SC4"
+  ],
+  "C3b0Hnu,C1b3Hnu,O2b0Hnu,O1b0Hnu": [
+    "N4a",
+    "SN4a"
+  ],
+  "C3b1Hnu,C2b2Hnu,C1b3Hnu,C1b3Hnu": [
+    "SC2",
+    "C1"
+  ],
+  "C4b0Hnu,C1b3Hnu,C1b3Hnu,C1b3Hnu": [
+    "SC2"
+  ],
+  "C2b2Hnu,C2b2Hnu,O2b0Hnu": [
+    "SN4ah",
+    "SN3r"
+  ],
+  "C2b2Hnu,C1b3Hnu,O2b0Hnu": [
+    "SN4ah",
+    "SN3r"
+  ],
+  "C3b1Hns,C1b3Hnu,C1b3Hnu": [
+    "TC3"
+  ],
+  "C3b1Hns,C3b1Hns,O2b0Hnu": [
+    "SN3a"
+  ],
+  "C4b0Hnu,C2b2Hns,F1b0Hnu,F1b0Hnu,F1b0Hnu": [
+    "SX4e"
+  ],
+  "C2b2Hns,O1b1Hnu": [
+    "TP1d"
+  ],
+  "C3b0Hnu,C1b3Hnu,O1b0Hnu": [
+    "SN4a"
+  ],
+  "C3b0Hnu,C2b2Hnu,C1b3Hnu,O1b0Hnu": [
+    "N6a"
+  ],
+  "C3b0Hnu,C2b2Hns,C1b3Hnu,O1b0Hnu": [
+    "SN5a"
+  ],
+  "C3b1Hns,C3b1Hns,S2b0Hnu": [
+    "SC5"
+  ],
+  "C1b3Hnu,C1b3Hnu,S3b0Hns": [
+    "SC6"
+  ],
+  "O1b0Hnu,S3b0Hns": [
+    "TP6"
+  ],
+  "C2b2Hnu,C2b2Hnu,N1b2Hnu": [
+    "SN6d"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b2Hnu,N1b2Hnu": [
+    "N6d"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b2Hnu,C2b2Hnu": [
+    "C1"
+  ],
+  "C3b0Hnu,C2b1Hnu,Cl1b0Hnu,Cl1b0Hnu,Cl1b0Hnu": [
+    "X3h"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu,C1b3Hnu,O2b0Hnu": [
+    "N2"
+  ],
+  "C2b2Hnu,C1b3Hnu,C1b3Hnu,C1b3Hnu,N3b0Hnu": [
+    "SN3"
+  ],
+  "C3b0Hnu,C1b3Hnu,C1b3Hnu,C1b3Hnu,N3b0Hnu,O1b0Hnu": [
+    "P2h"
+  ],
+  "C1b3Hnu,N2b1Hnu,N1b2Hnu": [
+    "P5d"
+  ],
+  "Br1b0Hnu,Br1b0Hnu,C2b2Hnu": [
+    "SX1"
+  ],
+  "Br1b0Hnu,C2b2Hnu,Cl1b0Hnu": [
+    "SX2"
+  ],
+  "C2b2Hnu,F1b0Hnu,F1b0Hnu": [
+    "TX4"
+  ],
+  "C2b2Hnu,I1b0Hnu,I1b0Hnu": [
+    "X2"
+  ],
+  "C2b0Hnu,S1b0Hnu,S1b0Hnu": [
+    "C6"
+  ],
+  "C1b3Hnu,C1b3Hnu,O2b0Hnu": [
+    "SN3a",
+    "SN3r"
+  ],
+  "C2b0Hnu,O1b0Hnu,O1b0Hnu": [
+    "SC6"
+  ],
+  "C2b0Hnu,N1b2Hnu,N1b0Hnu": [
+    "P4d",
+    "SN6"
+  ],
+  "C2b0Hnu,C1b2Hnu,C1b2Hnu": [
+    "SC4"
+  ],
+  "Br1b0Hnu,C2b1Hnu,C1b2Hnu": [
+    "SX1"
+  ],
+  "C2b2Hnu,Cl1b0Hnu,F1b0Hnu": [
+    "SX4"
+  ],
+  "C2b1Hnu,C1b2Hnu,Cl1b0Hnu": [
+    "SX3"
+  ],
+  "C3b0Hnu,N1b2Hnu,O1b0Hnu": [
+    "TP6a"
+  ],
+  "C3b1Hnu,C1b3Hnu,O1b1Hnu": [
+    "SN6r"
+  ],
+  "C3b1Hnu,C1b3Hnu,C1b3Hnu": [
+    "SC2"
+  ],
+  "C3b0Hau,C2b1Hau": [
+    "TC5"
+  ],
+  "C2b1Hau,C2b1Hau": [
+    "TC5"
+  ],
+  "C3b0Hnu,O1b1Hnu,O1b0Hnu": [
+    "TP2a",
+    "SP2r",
+    "SP2"
+  ],
+  "C3b0Hau,N2b0Hau": [
+    "TN6a"
+  ],
+  "C2b1Hau,N2b0Hau": [
+    "TN6a"
+  ],
+  "C2b2Hnu,C2b2Hnu": [
+    "TC2",
+    "TC3"
+  ],
+  "C3b1Hnu,C2b2Hnu": [
+    "TC3"
+  ],
+  "C3b1Hnu,C1b3Hnu": [
+    "TC3"
+  ],
+  "C1b3Hnu": [
+    "TC2"
+  ],
+  "C2b1Hnu,C1b2Hnu": [
+    "TC4",
+    "TC5"
+  ],
+  "C3b0Hnu,C1b3Hnu,C1b2Hnu": [
+    "SC3",
+    "SC4"
+  ],
+  "C2b1Hnu,N2b0Hnu": [
+    "TN5a",
+    "TN6a"
+  ],
+  "C2b1Hnu,C2b1Hnu": [
+    "TC5"
+  ],
+  "C1b3Hnu,N3b0Hnu": [
+    "TN1"
+  ],
+  "C3b0Hau,C3b0Has,C2b1Has,C1b3Hnu": [
+    "SC4"
+  ],
+  "C3b0Has,C3b0Hau,C2b1Has,C1b3Hnu": [
+    "SC4"
+  ],
+  "C2b1Has,C2b1Hau,C2b1Has": [
+    "TC5"
+  ],
+  "N3b0Hnu,O1b0Hnu,O1b0Hnu": [
+    "SN3a"
+  ],
+  "C3b0Has,C2b1Has,C2b1Hau": [
+    "TC5"
+  ],
+  "C3b0Hnu,C2b1Hnu": [
+    "TC5"
+  ],
+  "S2b0Hnu": [
+    "TC6"
+  ],
+  "C3b0Hnu,C2b1Hnu,C1b3Hnu": [
+    "SC4"
+  ],
+  "N2b1Hnu": [
+    "TN6d"
+  ],
+  "C3b0Hau,N3b0Hnu,O1b0Hnu,O1b0Hnu": [
+    "SN3a"
+  ],
+  "C3b0Hau,C1b3Hnu,O2b0Hnu": [
+    "SN2a"
+  ],
+  "C3b0Has,C2b1Hau,C2b1Has": [
+    "TC5"
+  ],
+  "C3b0Hau,C2b1Has,C2b1Has,N1b2Hnu": [
+    "SN6d"
+  ],
+  "C2b1Has,C2b1Has,C2b1Hau": [
+    "TC5"
+  ],
+  "C2b1Hnu,O1b0Hnu": [
+    "TN4a"
+  ],
+  "Br1b0Hnu,C3b0Hau": [
+    "TX2"
+  ],
+  "Br1b0Hnu,C3b0Hau,C2b1Has,C2b1Has": [
+    "SX2"
+  ],
+  "C3b0Hau,C2b1Has,C2b1Has,O1b1Hnu": [
+    "SN6"
+  ],
+  "C2b0Hnu,N1b0Hnu": [
+    "TN4a"
+  ],
+  "C3b0Hnu,O1b0Hnu": [
+    "TN6a",
+    "TN4a"
+  ],
+  "C4b0Hnu,F1b0Hnu,F1b0Hnu,F1b0Hnu": [
+    "SX4e"
+  ],
+  "C2b2Hns,C2b2Hns,C2b1Hnu,C2b1Hnu": [
+    "SC4"
+  ],
+  "C2b2Hns,C2b2Hns,C2b2Hnu,C2b2Hnu": [
+    "SC3"
+  ],
+  "C3b0Hau,C2b1Has,C2b1Has,Cl1b0Hnu": [
+    "SX3"
+  ],
+  "C3b0Hnu,C2b2Hns,C2b2Hns,O1b0Hnu": [
+    "TN6a"
+  ],
+  "C3b1Hnu,C2b2Hns,C2b2Hns,O1b1Hnu": [
+    "SN6"
+  ],
+  "C1b3Hnu,C1b3Hnu,N3b0Hnu": [
+    "TN3a",
+    "SN1"
+  ],
+  "C2b2Hnu,O2b0Hnu,O2b0Hnu": [
+    "SN5a"
+  ],
+  "O2b0Hnu": [
+    "TN2a"
+  ],
+  "C3b0Hau,C2b1Has,C2b1Has,I1b0Hnu": [
+    "X1"
+  ],
+  "C3b0Hau,C2b1Hau,I1b0Hnu": [
+    "X1"
+  ],
+  "C3b0Hau,C2b1Hau,O1b1Hnu": [
+    "SN6"
+  ],
+  "C3b1Hnu,C2b2Hnu,C1b3Hnu": [
+    "C2",
+    "SC2"
+  ],
+  "C3b0Hau,C2b1Has,C2b1Has,C1b3Hnu": [
+    "SC4"
+  ],
+  "C3b0Hau,C3b0Hau": [
+    "TC5"
+  ],
+  "C3b0Hau,C1b3Hnu": [
+    "TC4"
+  ],
+  "C3b0Hau,C2b1Hau,C1b3Hnu": [
+    "SC4"
+  ],
+  "C3b0Hnu,O2b0Hnu,O1b0Hnu": [
+    "SN4a"
+  ],
+  "C3b0Hau,O1b1Hnu": [
+    "TN6a"
+  ],
+  "C3b0Hau,C3b1Hnu,C1b3Hnu,C1b3Hnu": [
+    "C3"
+  ],
+  "C2b2Hnu,C2b2Hnu,N2b1Hnu": [
+    "SN6d"
+  ],
+  "N2b0Hau,N2b0Hau": [
+    "TN1a"
+  ],
+  "C2b2Hns,C2b2Hns,N2b1Hnu": [
+    "TN6d"
+  ],
+  "C3b0Hau,C2b1Hau,Cl1b0Hnu": [
+    "SX3"
+  ],
+  "C2b2Hns,C2b2Hns,O2b0Hnu": [
+    "TN4a"
+  ],
+  "C3b0Hau,C2b1Has,C2b1Has,S1b1Hnu": [
+    "SC6"
+  ],
+  "C2b2Hnu,C2b2Hnu,S2b0Hnu": [
+    "SC6"
+  ],
+  "C1b3Hnu,O2b0Hnu": [
+    "TN2a",
+    "TN3a"
+  ],
+  "C3b1Hnu,C3b1Hnu,O1b1Hnu,O1b1Hnu": [
+    "SP4r"
+  ],
+  "C3b1Hnu,C2b2Hnu,O2b0Hnu,O1b1Hnu": [
+    "SP1r"
+  ],
+  "C3b1Hnu,C3b1Hnu,O1b1Hnu": [
+    "SN6"
+  ],
+  "C3b0Hnu,C1b3Hnu,N2b1Hnu,O1b0Hnu": [
+    "SP3d"
+  ],
+  "C4b0Hnu,C2b2Hnu,O1b1Hnu": [
+    "SN6"
+  ],
+  "C3b1Hnu,C3b1Hnu,O2b0Hnu,O1b1Hnu": [
+    "SP1r"
+  ],
+  "C3b1Hnu,C2b2Hnu,O1b1Hnu,O1b1Hnu": [
+    "SP3"
+  ],
+  "C3b1Hnu,O2b0Hnu": [
+    "TN5r"
+  ],
+  "C3b1Hnu,C1b3Hnu,O2b0Hnu": [
+    "SN4ar",
+    "SN3r"
+  ],
+  "C3b1Hnu,O1b1Hnu": [
+    "TP1"
+  ],
+  "C4b0Hnu,C2b2Hnu,O1b1Hnu,O1b1Hnu": [
+    "SP4r"
+  ],
+  "C4b0Hnu,C2b2Hnu,O2b0Hnu,O1b1Hnu": [
+    "SP1r"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b2Hnu,N3b0Hnu": [
+    "SN3a"
+  ],
+  "C3b0Hnu,C2b2Hnu,C2b2Hnu,N2b1Hnu": [
+    "N5"
+  ],
+  "C3b0Hnu,C1b3Hnu,N2b1Hnu": [
+    "SN5"
+  ],
+  "C3b0Hnu,C2b2Hnu,N3b0Hnu,O1b0Hnu": [
+    "P2a"
+  ],
+  "C2b2Hnu,C2b2Hnu,C1b3Hnu,N3b0Hnu": [
+    "N4a",
+    "SN4a"
+  ],
+  "C3b1Hnu,C2b2Hnu,C2b2Hnu": [
+    "SC2"
+  ],
+  "C2b2Hns,C1b3Hnu,C1b3Hnu,N3b0Hnu": [
+    "SN3a"
+  ],
+  "C2b2Hns,C2b2Hns,C1b3Hnu,N3b0Hnu": [
+    "SN3a"
+  ],
+  "C2b2Hns,C2b2Hnu,C2b2Hns": [
+    "TC3"
+  ],
+  "C3b0Hnu,C2b2Hnu,O2b0Hnu,O1b0Hnu": [
+    "SN4a"
+  ],
+  "C2b2Hnu,C1b3Hnu,C1b3Hnu,N3b0Hnu": [
+    "SN3a"
+  ],
+  "C3b1Hnu,C3b0Hnu,C2b2Hnu,N2b1Hnu,O1b0Hnu": [
+    "P2"
+  ],
+  "C3b0Hnu,C2b2Hnu,C2b2Hnu,N2b1Hnu,O1b0Hnu": [
+    "P2"
+  ],
+  "C3b1Hnu,C3b0Hnu,O2b0Hnu,O1b0Hnu": [
+    "SN4a"
+  ],
+  "C3b0Hnu,C2b2Hnu,C2b2Hnu,O2b0Hnu,O1b0Hnu": [
+    "SN4a"
+  ],
+  "C2b2Hnu,C2b1Hnu,C2b1Hnu,C1b3Hnu": [
+    "C4h"
+  ],
+  "C2b2Hnu,O1b1Hnu": [
+    "TP1"
+  ],
+  "C2b2Hnu,C2b2Hnu,C2b2Hnu,C2b2Hnu,C1b3Hnu": [
+    "C1"
+  ],
+  "C2b2Hnu,O2b0Hnu": [
+    "TN5r"
+  ],
+  "C4b0Hnu,C2b2Hnu,C2b2Hnu": [
+    "SC2"
+  ],
+  "C2b2Hnu,C2b2Hnu,S2b0Hnu,S2b0Hnu": [
+    "C6"
+  ],
+  "Br1b0Hnu,C3b0Hau,C3b0Has,C2b1Has": [
+    "SX2"
+  ],
+  "Br1b0Hnu,C3b0Has,C3b0Hau,C2b1Has": [
+    "SX2"
+  ],
+  "C3b0Hau,C3b0Has,C2b1Has,Cl1b0Hnu": [
+    "SX3"
+  ],
+  "C3b0Hau,C3b0Has,C2b1Has,O1b1Hnu": [
+    "SN6"
+  ],
+  "C3b0Hau,C2b1Hau,N1b2Hnu": [
+    "SN6d"
+  ],
+  "Br1b0Hnu,C3b0Hau,C2b1Hau": [
+    "SX2"
+  ],
+  "C3b0Hau,C2b1Hau,C2b2Hnu,C1b3Hnu": [
+    "C4"
+  ],
+  "C3b0Hau,C2b1Hau,S1b1Hnu": [
+    "SC6"
+  ],
+  "C3b0Hau,N1b2Hnu": [
+    "TN6d"
+  ],
+  "C3b0Hau,Cl1b0Hnu": [
+    "TX3"
+  ],
+  "C3b1Hnu,C2b2Hnu,N1b2Hnu": [
+    "SN6"
+  ],
+  "C3b0Hau,C1b3Hnu,N2b0Hau": [
+    "SN6a"
+  ],
+  "C3b0Hau,C2b1Hau,F1b0Hnu": [
+    "SX4e"
+  ],
+  "N1b2Hnu,O1b0Hnu,O1b0Hnu,S4b0Hnu": [
+    "P5",
+    "N4a"
+  ],
+  "C1b3Hnu,O1b0Hnu,O1b0Hnu,S4b0Hnu": [
+    "P4"
+  ],
+  "C3b0Hau,C2b1Has,C2b1Has": [
+    "TC5"
+  ],
+  "F1b0Hnu,O1b0Hnu,O1b0Hnu,S4b0Hnu": [
+    "X4"
+  ],
+  "O1b0Hnu,O1b0Hnu,S4b0Hnu": [
+    "SP5"
+  ],
+  "N2b1Hnu,O1b1Hnu,O1b0Hnu,O1b0Hnu,S4b0Hnu": [
+    "P4"
+  ],
+  "C1b3Hnu,N2b1Hnu,O1b0Hnu,O1b0Hnu,S4b0Hnu": [
+    "P4"
+  ],
+  "C3b0Hau,C3b0Hau,O1b1Hnu": [
+    "SN6"
+  ],
+  "C3b1Hnu,C2b2Hnu,C2b2Hnu,O1b1Hnu": [
+    "P1"
+  ],
+  "C3b0Hnu,C3b0Hns,C2b1Hnu,C2b1Hnu": [
+    "SC5"
+  ],
+  "C3b1Hnu,C3b0Hns,C2b2Hnu,C2b2Hnu": [
+    "SC3"
+  ],
+  "C4b0Hnu,C3b1Hnu,C2b2Hnu": [
+    "SC3"
+  ],
+  "C4b0Hnu,C3b1Hnu,C2b2Hnu,C2b2Hnu": [
+    "SC3"
+  ],
+  "C3b1Hnu,C2b1Hnu,C1b3Hnu": [
+    "C2"
+  ],
+  "C3b1Hns,C3b0Hnu,C2b2Hnu,C2b1Hnu": [
+    "SC4"
+  ],
+  "C3b1Hns,C3b1Hnu,C2b2Hnu,C2b2Hnu": [
+    "SC3"
+  ],
+  "C3b1Hnu,C2b2Hnu,C2b2Hnu,C1b3Hnu": [
+    "SC2"
+  ],
+  "C3b1Hnu,C2b2Hnu,C2b1Hnu,C1b3Hnu": [
+    "SC2"
+  ]
+}

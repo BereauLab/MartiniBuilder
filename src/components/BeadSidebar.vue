@@ -3,19 +3,19 @@
     <div class="resize-handle" @mousedown.prevent="startResize" />
     <q-list class="full-width">
 
-      <q-expansion-item expand-separator icon="sym_o_scatter_plot" label="Bead Assignment & Types" default-opened>
+      <q-expansion-item group="sidebar" expand-separator icon="sym_o_scatter_plot" label="Bead Assignment & Types" default-opened @show="mapping.setActiveSection('beads')">
         <BeadAssignmentSection :mapping="mapping" />
       </q-expansion-item>
 
-      <q-expansion-item expand-separator icon="sym_o_diagonal_line" label="Bonds and Virtual Sites">
+      <q-expansion-item group="sidebar" expand-separator icon="sym_o_diagonal_line" label="Bonds and Virtual Sites" @show="mapping.setActiveSection('bonds')">
         <BondsVirtualSitesSection :mapping="mapping" />
       </q-expansion-item>
 
-      <q-expansion-item expand-separator icon="share" label="Angles & Dihedrals">
+      <q-expansion-item group="sidebar" expand-separator icon="share" label="Angles & Dihedrals" @show="mapping.setActiveSection('angles')">
         <AnglesSection :mapping="mapping" />
       </q-expansion-item>
 
-      <q-expansion-item expand-separator icon="output" label="Export">
+      <q-expansion-item group="sidebar" expand-separator icon="output" label="Export" @show="mapping.setActiveSection('export')">
         <ExportSection :mapping="mapping" />
       </q-expansion-item>
 

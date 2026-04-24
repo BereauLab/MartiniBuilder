@@ -37,12 +37,21 @@
               <span class="text-caption text-weight-medium">Bead {{ idx + 1 }}</span>
             </div>
             <div class="row items-center no-wrap">
-              <q-input
+              <q-select
                 v-model="bead.type"
-                dense outlined placeholder="Type"
+                :options="getTypeOptions(bead)"
+                use-input
+                fill-input
+                hide-selected
+                input-debounce="0"
+                dense
+                outlined
+                placeholder="Type"
                 class="q-mr-xs"
-                style="width: 80px; font-size: 11px"
+                style="width: 80px; font-size: 14px"
+                hide-dropdown-icon
                 @click.stop
+                @new-value="(val, done) => done(val)"
               />
               <q-btn flat round dense icon="close" color="negative" size="xs" @click.stop="mapping.deleteBead(idx)" />
             </div>
@@ -64,10 +73,22 @@
               <span class="chip-prop">{{ prop.hydrogens }}&nbsp;H</span>
               <template v-if="prop.aromatic">
                 <span class="chip-sep" />
-                <svg class="arom-ring" width="13" height="13" viewBox="0 0 14 14">
-                  <polygon points="13,7 10,12.2 4,12.2 1,7 4,1.8 10,1.8" fill="none" stroke="currentColor" stroke-width="1.4"/>
-                  <circle cx="7" cy="7" r="2.6" fill="none" stroke="currentColor" stroke-width="1.1"/>
-                </svg>
+                <span class="chip-icon-wrap">
+                  <svg class="arom-ring" width="13" height="13" viewBox="0 0 14 14">
+                    <polygon points="13,7 10,12.2 4,12.2 1,7 4,1.8 10,1.8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                    <circle cx="7" cy="7" r="2.6" fill="none" stroke="currentColor" stroke-width="1.1"/>
+                  </svg>
+                  <q-tooltip :delay="400" class="text-caption">Aromatic</q-tooltip>
+                </span>
+              </template>
+              <template v-if="prop.shared">
+                <span class="chip-sep" />
+                <span class="chip-icon-wrap">
+                  <svg class="shared-half" width="13" height="13" viewBox="0 0 14 14">
+                    <path d="M7,1 A6,6 0 0,1 7,13 L7,1 Z" fill="currentColor" stroke="currentColor" stroke-width="0.5"/>
+                  </svg>
+                  <q-tooltip :delay="400" class="text-caption">Shared between beads</q-tooltip>
+                </span>
               </template>
             </div>
           </div>
@@ -100,6 +121,10 @@ function onMappingFileChange(file) {
     props.mapping.loadMappingRules(file)
   }
 }
+
+function getTypeOptions(bead) {
+  return props.mapping.combinedMappings[bead.signature] || []
+}
 </script>
 
 <style scoped>
@@ -121,8 +146,17 @@ function onMappingFileChange(file) {
   color: #555;
   gap: 2px;
 }
+.chip-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
 .arom-ring {
   display: block;
   color: #222;
+}
+.shared-half {
+  display: block;
+  color: #555;
 }
 </style>
