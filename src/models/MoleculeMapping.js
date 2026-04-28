@@ -397,18 +397,26 @@ export class MoleculeMapping {
     this.angles = [];
     this.dihedrals = [];
 
-    // Build adjacency from CG bonds (VS beads have no mass and no bonded angles)
+    // Build adjacency and separate constraint-bond sets
     const n = this.beads.length;
     const adj = Array.from({ length: n }, () => []);
     const bondKeySet = new Set();
-    this.bonds.forEach(({ a, b }) => {
+    const constraintKeySet = new Set();
+    this.bonds.forEach(({ a, b, constraint }) => {
       adj[a].push(b);
       adj[b].push(a);
-      bondKeySet.add(`${Math.min(a, b)}-${Math.max(a, b)}`);
+      const key = `${Math.min(a, b)}-${Math.max(a, b)}`;
+      bondKeySet.add(key);
+      if (constraint) constraintKeySet.add(key);
     });
     const hasBond = (a, b) => bondKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
+    const isConstraint = (a, b) => constraintKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
 
-    // Angles: every path A–B–C where A–C is not directly bonded (skip rigid triangles)
+    // Neighbour sets for O(1) common-neighbour lookup
+    const nbSet = adj.map(list => new Set(list));
+
+    // Angles: skip if A–C directly bonded (rigid triangle) OR if A and C share a common
+    // neighbour D≠B — the angle is already determined by two fused rigid triangles.
     const angleSet = new Set();
     for (let b = 0; b < n; b++) {
       const nb = adj[b];
@@ -416,35 +424,58 @@ export class MoleculeMapping {
         for (let j = i + 1; j < nb.length; j++) {
           const a = nb[i], c = nb[j];
           if (hasBond(a, c)) continue;
+          if (adj[a].some(d => d !== b && nbSet[c].has(d))) continue;
           const key = `${Math.min(a, c)}-${b}-${Math.max(a, c)}`;
           if (!angleSet.has(key)) { angleSet.add(key); this.angles.push([a, b, c]); }
         }
       }
     }
 
-    // Improper dihedrals: beads with ≥3 bonds that contain aromatic atoms
-    if (!this.molJson) return;
-    const molObj = this.molJson.molecules[0];
-    const aromaticSet = new Set(
-      molObj.extensions?.find(e => e.name === 'rdkitRepresentation')?.aromaticAtoms || []
-    );
-    const beadAromatic = this.beads.map(bead =>
-      bead.atom_indices.some(aIdx => aromaticSet.has(aIdx))
-    );
     const dihSet = new Set();
+    const addDih = (p0, p1, p2, p3) => {
+      const key = `${p0}-${p1}-${p2}-${p3}`;
+      if (!dihSet.has(key)) { dihSet.add(key); this.dihedrals.push([p0, p1, p2, p3]); }
+    };
+
+    // Improper dihedrals (case 1): hub bead with ≥3 CONSTRAINT bonds.
+    // Targets beads inside fused aromatic ring systems; excludes linker beads that
+    // connect two rings via a single non-constraint bond.
     for (let b = 0; b < n; b++) {
-      const nb = adj[b];
-      if (nb.length < 3 || !beadAromatic[b]) continue;
-      for (let i = 0; i < nb.length - 2; i++) {
-        for (let j = i + 1; j < nb.length - 1; j++) {
-          for (let k = j + 1; k < nb.length; k++) {
-            const [n1, n2, n3] = [nb[i], nb[j], nb[k]];
-            const key = `${n1}-${b}-${n2}-${n3}`;
-            if (!dihSet.has(key)) { dihSet.add(key); this.dihedrals.push([n1, b, n2, n3]); }
+      const constraintNb = adj[b].filter(nb => isConstraint(b, nb));
+      if (constraintNb.length < 3) continue;
+      for (let i = 0; i < constraintNb.length - 2; i++) {
+        for (let j = i + 1; j < constraintNb.length - 1; j++) {
+          for (let k = j + 1; k < constraintNb.length; k++) {
+            addDih(constraintNb[i], b, constraintNb[j], constraintNb[k]);
           }
         }
       }
     }
+
+    // Improper dihedrals (case 2): beads forming the ring around a virtual site.
+    // Walk the ring of constructors in bond order and add an improper for the
+    // first four consecutive beads, keeping them coplanar.
+    this.virtualSites.forEach(vsIdx => {
+      const cs = this.vsConnections[vsIdx] || [];
+      if (cs.length < 4) return;
+      const csSet = new Set(cs);
+      const ringAdj = new Map(cs.map(c => [c, adj[c].filter(nb => csSet.has(nb))]));
+      // Walk a path through the constructor ring
+      const visited = new Set([cs[0]]);
+      const path = [cs[0]];
+      let curr = cs[0];
+      while (path.length < cs.length) {
+        const next = (ringAdj.get(curr) || []).find(nb => !visited.has(nb));
+        if (!next) break;
+        visited.add(next);
+        path.push(next);
+        curr = next;
+      }
+      if (path.length >= 4) {
+        const [p0, p1, p2, p3] = path;
+        addDih(p0, p1, p2, p3);
+      }
+    });
   }
 
   _maxIndependentSet(candidates, adjMap) {

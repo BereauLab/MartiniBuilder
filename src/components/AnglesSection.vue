@@ -2,17 +2,20 @@
   <q-card>
     <q-card-section>
 
-      <div class="row items-center q-mb-sm">
-        <div class="text-caption text-grey-6">
-          Click bead spheres in the viewer to build angles and dihedrals.
-        </div>
-        <q-space />
-        <q-btn
-          dense outline size="sm" color="secondary" label="Auto-assign"
-          :disable="mapping.beads.length < 3"
-          @click="mapping.autoAssignAnglesAndDihedrals()"
-        />
+      <div class="text-caption text-grey-6 q-mb-sm">
+        Click bead spheres in the viewer to build angles and dihedrals.
       </div>
+
+      <q-btn
+        label="Auto-assign angles & dihedrals"
+        icon="auto_fix_high"
+        dense
+        outline
+        color="primary"
+        class="full-width q-mb-md"
+        :disable="mapping.beads.length < 3"
+        @click="mapping.autoAssignAnglesAndDihedrals()"
+      />
 
       <!-- Angles -->
       <div class="row items-center q-mb-xs">
