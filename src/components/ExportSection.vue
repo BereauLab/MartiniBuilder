@@ -78,19 +78,12 @@ const props = defineProps({
   }
 })
 
-function baseName() {
-  if (!props.mapping.sdfData) return 'molecule';
-  return (props.mapping.sdfData.split(/\r?\n/)[0].trim() || 'molecule')
-    .replace(/\s+/g, '_').toLowerCase();
-}
-
 function download(type) {
-  const name = baseName();
   switch (type) {
-    case 'ndx':  return downloadFile(generateNdx(props.mapping),         `${name}.ndx`);
-    case 'gro':  return downloadFile(generateGro(props.mapping),         `${name}_cg.gro`);
-    case 'itp':  return downloadFile(generateItp(props.mapping),         `${name}.itp`);
-    case 'json': return downloadFile(generateMappingJson(props.mapping), `${name}_mappings.json`);
+    case 'ndx':  return downloadFile(generateNdx(props.mapping),         'mapping.ndx');
+    case 'gro':  return downloadFile(generateGro(props.mapping),         'ligand.gro');
+    case 'itp':  return downloadFile(generateItp(props.mapping),         'ligand.itp');
+    case 'json': return downloadFile(generateMappingJson(props.mapping), 'bead-mapping.json');
   }
 }
 </script>
