@@ -388,7 +388,7 @@ export class MoleculeMapping {
       if (!shortest.pair) return;
       const [p, q] = shortest.pair;
       const key = `${Math.min(p, q)}-${Math.max(p, q)}`;
-      this.bonds.push({ a: Math.min(p, q), b: Math.max(p, q), constraint: false });
+      this.bonds.push({ a: Math.min(p, q), b: Math.max(p, q), constraint: true });
       bondKeySet.add(key);
     });
   }
@@ -397,7 +397,6 @@ export class MoleculeMapping {
     this.angles = [];
     this.dihedrals = [];
 
-    // Build adjacency and separate constraint-bond sets
     const n = this.beads.length;
     const adj = Array.from({ length: n }, () => []);
     const bondKeySet = new Set();
@@ -412,21 +411,19 @@ export class MoleculeMapping {
     const hasBond = (a, b) => bondKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
     const isConstraint = (a, b) => constraintKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
 
-    // Neighbour sets for O(1) common-neighbour lookup
-    const nbSet = adj.map(list => new Set(list));
-
-    // Angles: skip if A–C directly bonded (rigid triangle) OR if A and C share a common
-    // neighbour D≠B — the angle is already determined by two fused rigid triangles.
+    // 1. Angles: Homogeneous distribution
     const angleSet = new Set();
     for (let b = 0; b < n; b++) {
       const nb = adj[b];
       for (let i = 0; i < nb.length - 1; i++) {
         for (let j = i + 1; j < nb.length; j++) {
           const a = nb[i], c = nb[j];
-          if (hasBond(a, c)) continue;
-          if (adj[a].some(d => d !== b && nbSet[c].has(d))) continue;
+          if (hasBond(a, c)) continue; // Triangle exclusion
           const key = `${Math.min(a, c)}-${b}-${Math.max(a, c)}`;
-          if (!angleSet.has(key)) { angleSet.add(key); this.angles.push([a, b, c]); }
+          if (!angleSet.has(key)) {
+            angleSet.add(key);
+            this.angles.push([a, b, c]);
+          }
         }
       }
     }
@@ -434,33 +431,34 @@ export class MoleculeMapping {
     const dihSet = new Set();
     const addDih = (p0, p1, p2, p3) => {
       const key = `${p0}-${p1}-${p2}-${p3}`;
-      if (!dihSet.has(key)) { dihSet.add(key); this.dihedrals.push([p0, p1, p2, p3]); }
+      if (!dihSet.has(key)) {
+        dihSet.add(key);
+        this.dihedrals.push([p0, p1, p2, p3]);
+      }
     };
 
-    // Improper dihedrals (case 1): hub bead with ≥3 CONSTRAINT bonds.
-    // Targets beads inside fused aromatic ring systems; excludes linker beads that
-    // connect two rings via a single non-constraint bond.
+    // 2. Improper dihedrals (Case 1): Symmetric Assignment
+    // Generates exactly 'k' impropers symmetrically distributed around the hub
     for (let b = 0; b < n; b++) {
       const constraintNb = adj[b].filter(nb => isConstraint(b, nb));
-      if (constraintNb.length < 3) continue;
-      for (let i = 0; i < constraintNb.length - 2; i++) {
-        for (let j = i + 1; j < constraintNb.length - 1; j++) {
-          for (let k = j + 1; k < constraintNb.length; k++) {
-            addDih(constraintNb[i], b, constraintNb[j], constraintNb[k]);
-          }
-        }
+      const k = constraintNb.length;
+      if (k < 3) continue;
+
+      for (let i = 0; i < k; i++) {
+        const p0 = constraintNb[i];
+        const p1 = b; // Central hub
+        const p2 = constraintNb[(i + 1) % k];
+        const p3 = constraintNb[(i + 2) % k];
+        addDih(p0, p1, p2, p3);
       }
     }
 
-    // Improper dihedrals (case 2): beads forming the ring around a virtual site.
-    // Walk the ring of constructors in bond order and add an improper for the
-    // first four consecutive beads, keeping them coplanar.
+    // 3. Improper dihedrals (Case 2): Virtual site constructor rings
     this.virtualSites.forEach(vsIdx => {
       const cs = this.vsConnections[vsIdx] || [];
       if (cs.length < 4) return;
       const csSet = new Set(cs);
       const ringAdj = new Map(cs.map(c => [c, adj[c].filter(nb => csSet.has(nb))]));
-      // Walk a path through the constructor ring
       const visited = new Set([cs[0]]);
       const path = [cs[0]];
       let curr = cs[0];
