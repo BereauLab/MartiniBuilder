@@ -31,6 +31,7 @@ onMounted(() => {
     viewerDiv.value.addEventListener('mousedown', function(e) {
       mouseDownPos = {x: e.clientX, y: e.clientY}
       isDragging = false
+      document.activeElement?.blur()
     }, true)
 
     viewerDiv.value.addEventListener('mousemove', function(e) {

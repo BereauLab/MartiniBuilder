@@ -37,22 +37,36 @@
               <span class="text-caption text-weight-medium">Bead {{ idx + 1 }}</span>
             </div>
             <div class="row items-center no-wrap">
-              <q-select
-                v-model="bead.type"
-                :options="getTypeOptions(bead)"
-                use-input
-                fill-input
-                hide-selected
-                input-debounce="0"
-                dense
-                outlined
-                placeholder="Type"
-                class="q-mr-xs"
-                style="width: 80px; font-size: 14px"
-                hide-dropdown-icon
-                @click.stop
-                @new-value="(val, done) => done(val)"
-              />
+              <div @click.stop="openMenu(idx)" style="width: 80px">
+                <q-input
+                  v-model="bead.type"
+                  dense
+                  outlined
+                  placeholder="Type"
+                  class="q-mr-xs"
+                  style="width: 80px; font-size: 14px"
+                  @blur="closeMenu(idx)"
+                />
+                <q-menu
+                  :ref="el => { if (el) menuRefs[idx] = el }"
+                  no-focus
+                  no-refocus
+                  no-parent-event
+                  fit
+                >
+                  <q-list dense>
+                    <q-item
+                      v-for="opt in getTypeOptions(bead)"
+                      :key="opt"
+                      clickable
+                      @mousedown.prevent
+                      @click="bead.type = opt; closeMenu(idx)"
+                    >
+                      <q-item-section>{{ opt }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </div>
               <q-btn flat round dense icon="close" color="negative" size="xs" @click.stop="mapping.deleteBead(idx)" />
             </div>
           </div>
@@ -105,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 
 const props = defineProps({
   mapping: {
@@ -115,6 +129,7 @@ const props = defineProps({
 })
 
 const mappingFile = ref(null)
+const menuRefs = {}
 
 function onMappingFileChange(file) {
   if (file) {
@@ -124,6 +139,16 @@ function onMappingFileChange(file) {
 
 function getTypeOptions(bead) {
   return props.mapping.combinedMappings[bead.signature] || []
+}
+
+function openMenu(idx) {
+  const bead = props.mapping.beads[idx]
+  if (!bead || getTypeOptions(bead).length === 0) return
+  nextTick(() => { menuRefs[idx]?.show() })
+}
+
+function closeMenu(idx) {
+  menuRefs[idx]?.hide()
 }
 </script>
 
