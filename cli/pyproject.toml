@@ -1,0 +1,18 @@
+[project]
+name = "martini-mapper"
+version = "0.1.0"
+description = "Desktop CLI for the Martini Mapper bead-mapping tool"
+requires-python = ">=3.10"
+dependencies = [
+    "pywebview>=4.0",
+]
+
+[project.scripts]
+martini-mapper = "app:main"
+
+[tool.setuptools]
+py-modules = ["app"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

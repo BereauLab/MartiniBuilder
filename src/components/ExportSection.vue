@@ -78,12 +78,20 @@ const props = defineProps({
   }
 })
 
+const FILES = {
+  ndx:  { name: 'mapping.ndx',      generate: () => generateNdx(props.mapping) },
+  gro:  { name: 'ligand.gro',       generate: () => generateGro(props.mapping) },
+  itp:  { name: 'ligand.itp',       generate: () => generateItp(props.mapping) },
+  json: { name: 'bead-mapping.json', generate: () => generateMappingJson(props.mapping) },
+}
+
 function download(type) {
-  switch (type) {
-    case 'ndx':  return downloadFile(generateNdx(props.mapping),         'mapping.ndx');
-    case 'gro':  return downloadFile(generateGro(props.mapping),         'ligand.gro');
-    case 'itp':  return downloadFile(generateItp(props.mapping),         'ligand.itp');
-    case 'json': return downloadFile(generateMappingJson(props.mapping), 'bead-mapping.json');
+  const { name, generate } = FILES[type]
+  const content = generate()
+  if (window.pywebview?.api) {
+    window.pywebview.api.save_file(type, content)
+  } else {
+    downloadFile(content, name)
   }
 }
 </script>

@@ -85,29 +85,28 @@ function computeCharges(mapping) {
 // ── ITP ───────────────────────────────────────────────────────────────────────
 
 export function generateItp(mapping) {
-  const molName = getMoleculeName(mapping);
   const n = mapping.beads.length;
-  const masses  = computeMasses(mapping);
+  const masses = computeMasses(mapping);
   const charges = computeCharges(mapping);
   const lines = [];
 
   // [moleculetype]
   lines.push('[moleculetype]');
   lines.push('; molname    nrexcl');
-  lines.push(`  ${molName.padEnd(10)} 1`);
+  lines.push(`  ligand           1`);
   lines.push('');
 
   // [atoms]
   lines.push('[atoms]');
   lines.push('; nr type resnr residue atom cgnr charge mass');
   mapping.beads.forEach((bead, idx) => {
-    const nr     = String(idx + 1).padStart(4);
-    const type   = (bead.type || '???').padEnd(6);
-    const resnr  = '1'.padStart(4);
-    const atom   = `B${idx + 1}`.padEnd(5);
-    const cgnr   = String(idx + 1).padStart(4);
+    const nr = String(idx + 1).padStart(4);
+    const type = (bead.type || '???').padEnd(6);
+    const resnr = '1'.padStart(4);
+    const atom = `B${idx + 1}`.padEnd(5);
+    const cgnr = String(idx + 1).padStart(4);
     const charge = charges[idx].toFixed(3).padStart(8);
-    const mass   = masses[idx].toFixed(3).padStart(8);
+    const mass = masses[idx].toFixed(3).padStart(8);
     lines.push(`${nr}  ${type}  ${resnr}     LIG  ${atom}${cgnr}${charge}${mass}`);
   });
   lines.push('');

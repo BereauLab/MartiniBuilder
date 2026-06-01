@@ -43,14 +43,24 @@ export class MoleculeMapping {
 
   async loadMappingRules(file) {
     try {
-      const text = await file.text();
-      this.mappingRules = JSON.parse(text);
-      // Clear and re-assign types for all beads with the new rules
-      this.beads.forEach(bead => { bead.type = ''; });
-      this.beads.forEach((_, idx) => this.assignTypeIfMatches(idx));
+      this._applyMappingRulesJson(await file.text());
     } catch (e) {
       console.error("Failed to parse mapping JSON", e);
     }
+  }
+
+  loadMappingRulesFromJson(jsonString) {
+    try {
+      this._applyMappingRulesJson(jsonString);
+    } catch (e) {
+      console.error("Failed to parse mapping JSON", e);
+    }
+  }
+
+  _applyMappingRulesJson(text) {
+    this.mappingRules = JSON.parse(text);
+    this.beads.forEach(bead => { bead.type = ''; });
+    this.beads.forEach((_, idx) => this.assignTypeIfMatches(idx));
   }
 
   loadSdf(data) {

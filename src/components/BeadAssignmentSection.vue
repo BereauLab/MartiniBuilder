@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 
 const props = defineProps({
   mapping: {
@@ -129,6 +129,16 @@ const props = defineProps({
 })
 
 const mappingFile = ref(null)
+
+onMounted(() => {
+  function tryLoadCliMapping() {
+    window.pywebview?.api?.get_initial_mapping().then(json => {
+      if (json) props.mapping.loadMappingRulesFromJson(json)
+    })
+  }
+  window.addEventListener('pywebviewready', tryLoadCliMapping)
+  tryLoadCliMapping()
+})
 const menuRefs = {}
 
 function onMappingFileChange(file) {
