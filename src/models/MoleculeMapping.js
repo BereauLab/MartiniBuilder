@@ -565,12 +565,14 @@ export class MoleculeMapping {
     }
 
     const aromatic = molObj.extensions?.find(e => e.name === 'rdkitRepresentation')?.aromaticAtoms?.includes(aIdx) || false;
+    const charge = atom.chg !== undefined ? atom.chg : (atomDef.chg ?? 0);
 
     return {
       element: this.getElementSymbol(z),
       hydrogens: impHs + explicitHs,
       aromatic: aromatic,
-      bonds: heavyBonds
+      bonds: heavyBonds,
+      charge: charge
     };
   }
 
@@ -595,12 +597,13 @@ export class MoleculeMapping {
       if (a.element !== b.element) return a.element.localeCompare(b.element);
       if (a.bonds !== b.bonds) return b.bonds - a.bonds;
       if (a.aromatic !== b.aromatic) return a.aromatic === b.aromatic ? 0 : a.aromatic ? -1 : 1;
-      return b.hydrogens - a.hydrogens;
+      if (a.hydrogens !== b.hydrogens) return b.hydrogens - a.hydrogens;
+      return b.charge - a.charge;
     });
 
     bead.properties = props;
     bead.signature = props.map(p =>
-      `${p.element}${p.bonds}b${p.hydrogens}H${p.aromatic ? 'a' : 'n'}${p.shared ? 's' : 'u'}`
+      `${p.element}${p.bonds}b${p.hydrogens}H${p.aromatic ? 'a' : 'n'}${p.shared ? 's' : 'u'}c${p.charge}`
     ).join(',');
     bead.cog = this._calculateCog(bead.atom_indices);
     bead.radius = this._getBeadRadius(props.length);

@@ -85,6 +85,12 @@
               </span>
               <span class="chip-sep" />
               <span class="chip-prop">{{ prop.hydrogens }}&nbsp;H</span>
+              <template v-if="prop.charge !== 0">
+                <span class="chip-sep" />
+                <span class="chip-prop chip-charge" :class="prop.charge > 0 ? 'charge-pos' : 'charge-neg'">
+                  {{ prop.charge > 0 ? '+' : '' }}{{ prop.charge }}
+                </span>
+              </template>
               <template v-if="prop.aromatic">
                 <span class="chip-sep" />
                 <span class="chip-icon-wrap">
@@ -181,6 +187,8 @@ function closeMenu(idx) {
   color: #555;
   gap: 2px;
 }
+.charge-pos { color: #b00; font-weight: 600; }
+.charge-neg { color: #00b; font-weight: 600; }
 .chip-icon-wrap {
   display: inline-flex;
   align-items: center;

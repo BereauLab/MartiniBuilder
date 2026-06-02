@@ -26,6 +26,7 @@ def _atom_features(aa_graph, node_idx: int, shared: bool = False):
         "hydrogens": hydrogens,
         "aromatic": bool(node_data.get("aromatic", False)),
         "shared": shared,
+        "charge": int(node_data.get("charge", 0)),
     }
 
 
@@ -36,6 +37,7 @@ def _atom_sort_key(atom_feature: dict):
         -atom_feature["bonds"],
         not atom_feature["aromatic"],
         -atom_feature["hydrogens"],
+        -atom_feature["charge"],
     )
 
 
@@ -98,6 +100,7 @@ def main(table_path: Path, output_path: Path):
             for a in bead_info["atoms"]:
                 akey = f"{a['element']}{a['bonds']}b{a['hydrogens']}H"
                 akey += f"{'a' if a['aromatic'] else 'n'}{'s' if a['shared'] else 'u'}"
+                akey += f"c{a['charge']}"
                 akeys.append(akey)
             key = ",".join(akey for akey in akeys)
             if key in bead_type_map and bead_type not in bead_type_map[key]:

@@ -209,7 +209,7 @@ function updateVisualization() {
     _drawArc(viewer, cogA, cogB, cogC, '#FF6600')
   })
 
-  viewer.render()
+  requestAnimationFrame(() => viewer.render())
 }
 
 function _drawArc(viewer, cogA, cogB, cogC, color) {
