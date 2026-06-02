@@ -85,6 +85,7 @@ function loadMolecule(data) {
     preventBgClick = true
     if (typeof sel.index !== 'undefined') {
       props.mapping.toggleAtom(sel.index, sel.elem || 'Unknown')
+      updateVisualization()
     }
   })
 
@@ -193,6 +194,7 @@ function updateVisualization() {
           preventBgClick = true
           if (isBondMode) props.mapping.toggleBondBeadByIndex(idx)
           else props.mapping.toggleAngleBead(idx)
+          updateVisualization()
         }
       })
     })
