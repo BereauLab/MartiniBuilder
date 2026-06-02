@@ -193,7 +193,23 @@ export function generateItp(mapping) {
 // ── Mapping JSON ──────────────────────────────────────────────────────────────
 
 export function generateMappingJson(mapping) {
-  return JSON.stringify(mapping.combinedMappings, null, 2);
+  // Start from the merged default + uploaded rules
+  const result = {}
+  for (const [sig, types] of Object.entries(mapping.combinedMappings)) {
+    result[sig] = [...types]
+  }
+
+  // Fold in manually entered bead types so they are preserved on reload
+  for (const bead of mapping.beads) {
+    if (!bead.type || !bead.signature) continue
+    if (!result[bead.signature]) {
+      result[bead.signature] = [bead.type]
+    } else if (!result[bead.signature].includes(bead.type)) {
+      result[bead.signature].unshift(bead.type)
+    }
+  }
+
+  return JSON.stringify(result, null, 2)
 }
 
 // ── Download helper ───────────────────────────────────────────────────────────
