@@ -658,18 +658,26 @@ export class MoleculeMapping {
   }
 
   _calculateCog(indices) {
-    let nx = 0, ny = 0, nz = 0;
-    let count = 0;
+    // Atoms shared across multiple beads contribute weight 1/n to each bead's COG.
+    const atomBeadCount = new Map();
+    this.beads.forEach(bead => {
+      bead.atom_indices.forEach(aIdx => {
+        atomBeadCount.set(aIdx, (atomBeadCount.get(aIdx) || 0) + 1);
+      });
+    });
+
+    let wx = 0, wy = 0, wz = 0, wTotal = 0;
     indices.forEach(idx => {
       if (this.coords && this.coords[idx]) {
-        nx += this.coords[idx].x;
-        ny += this.coords[idx].y;
-        nz += this.coords[idx].z;
-        count++;
+        const w = 1 / (atomBeadCount.get(idx) || 1);
+        wx += this.coords[idx].x * w;
+        wy += this.coords[idx].y * w;
+        wz += this.coords[idx].z * w;
+        wTotal += w;
       }
     });
-    if (count === 0) return { x: 0, y: 0, z: 0 };
-    return { x: nx / count, y: ny / count, z: nz / count };
+    if (wTotal === 0) return { x: 0, y: 0, z: 0 };
+    return { x: wx / wTotal, y: wy / wTotal, z: wz / wTotal };
   }
 
   _generateBeadColors(count) {
