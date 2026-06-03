@@ -63,12 +63,12 @@
         </q-item>
       </q-list>
 
-      <!-- Dihedrals -->
+      <!-- Improper Dihedrals -->
       <div class="row items-center q-mb-xs">
-        <span class="text-subtitle2">Dihedrals</span>
+        <span class="text-subtitle2">Improper Dihedrals</span>
         <q-space />
         <q-btn
-          :label="mapping.angleMode === 'dihedral' ? 'Cancel' : 'Add Dihedral'"
+          :label="mapping.angleMode === 'dihedral' ? 'Cancel' : 'Add Improper'"
           dense size="sm"
           :color="mapping.angleMode === 'dihedral' ? 'orange-8' : 'primary'"
           :unelevated="mapping.angleMode === 'dihedral'"
@@ -89,7 +89,7 @@
         </span>
       </div>
 
-      <q-list bordered separator dense class="rounded-borders">
+      <q-list bordered separator dense class="rounded-borders q-mb-md">
         <q-item v-for="(dihedral, i) in mapping.dihedrals" :key="i" dense class="q-py-xs">
           <q-item-section>
             <div class="row items-center no-wrap" style="gap: 4px;">
@@ -105,7 +105,53 @@
           </q-item-section>
         </q-item>
         <q-item v-if="mapping.dihedrals.length === 0" dense>
-          <q-item-section class="text-caption text-grey-5">No dihedrals assigned.</q-item-section>
+          <q-item-section class="text-caption text-grey-5">No improper dihedrals assigned.</q-item-section>
+        </q-item>
+      </q-list>
+
+      <!-- Proper Dihedrals -->
+      <div class="row items-center q-mb-xs">
+        <span class="text-subtitle2">Proper Dihedrals</span>
+        <q-space />
+        <q-btn
+          :label="mapping.angleMode === 'proper' ? 'Cancel' : 'Add Proper'"
+          dense size="sm"
+          :color="mapping.angleMode === 'proper' ? 'orange-8' : 'primary'"
+          :unelevated="mapping.angleMode === 'proper'"
+          :outline="mapping.angleMode !== 'proper'"
+          :disable="mapping.beads.length < 4"
+          @click="mapping.setAngleMode('proper')"
+        />
+      </div>
+
+      <div v-if="mapping.angleMode === 'proper'" class="row items-center q-mb-xs" style="gap: 4px; flex-wrap: wrap;">
+        <template v-for="(beadIdx, i) in mapping.angleCandidates" :key="i">
+          <q-icon v-if="i > 0" name="arrow_forward" size="10px" color="grey-6" />
+          <q-avatar :style="{ backgroundColor: mapping.beads[beadIdx]?.color }" size="10px" />
+          <span class="text-caption">{{ mapping.beads[beadIdx]?.type || ('Bead ' + (beadIdx + 1)) }}</span>
+        </template>
+        <span class="text-caption text-grey-5">
+          {{ mapping.angleCandidates.length === 0 ? 'Click 4 beads' : `${4 - mapping.angleCandidates.length} more` }}
+        </span>
+      </div>
+
+      <q-list bordered separator dense class="rounded-borders">
+        <q-item v-for="(dihedral, i) in mapping.properDihedrals" :key="i" dense class="q-py-xs">
+          <q-item-section>
+            <div class="row items-center no-wrap" style="gap: 4px;">
+              <template v-for="(beadIdx, j) in dihedral" :key="j">
+                <span v-if="j > 0" class="text-caption text-grey-5">–</span>
+                <q-avatar :style="{ backgroundColor: mapping.beads[beadIdx]?.color }" size="10px" />
+                <span class="text-caption">{{ mapping.beads[beadIdx]?.type || ('Bead ' + (beadIdx + 1)) }}</span>
+              </template>
+            </div>
+          </q-item-section>
+          <q-item-section side>
+            <q-btn flat round dense icon="close" color="negative" size="xs" @click="mapping.deleteProperDihedralAt(i)" />
+          </q-item-section>
+        </q-item>
+        <q-item v-if="mapping.properDihedrals.length === 0" dense>
+          <q-item-section class="text-caption text-grey-5">No proper dihedrals assigned.</q-item-section>
         </q-item>
       </q-list>
 

@@ -18,6 +18,27 @@ function angleDeg(cogA, cogB, cogC) {
   return Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI;
 }
 
+// Signed dihedral angle (degrees) for four points A-B-C-D, measured around B-C.
+function dihedralDeg(a, b, c, d) {
+  const b1x = b.x - a.x, b1y = b.y - a.y, b1z = b.z - a.z;
+  const b2x = c.x - b.x, b2y = c.y - b.y, b2z = c.z - b.z;
+  const b3x = d.x - c.x, b3y = d.y - c.y, b3z = d.z - c.z;
+  // n1 = b1 × b2
+  const n1x = b1y * b2z - b1z * b2y, n1y = b1z * b2x - b1x * b2z, n1z = b1x * b2y - b1y * b2x;
+  // n2 = b2 × b3
+  const n2x = b2y * b3z - b2z * b3y, n2y = b2z * b3x - b2x * b3z, n2z = b2x * b3y - b2y * b3x;
+  const lenN1 = Math.sqrt(n1x * n1x + n1y * n1y + n1z * n1z);
+  const lenN2 = Math.sqrt(n2x * n2x + n2y * n2y + n2z * n2z);
+  if (!lenN1 || !lenN2) return 0;
+  const cosA = (n1x * n2x + n1y * n2y + n1z * n2z) / (lenN1 * lenN2);
+  // Sign: positive if b2 · (n1 × n2) > 0
+  const crossX = n1y * n2z - n1z * n2y;
+  const crossY = n1z * n2x - n1x * n2z;
+  const crossZ = n1x * n2y - n1y * n2x;
+  const sign = (b2x * crossX + b2y * crossY + b2z * crossZ) >= 0 ? 1 : -1;
+  return sign * Math.acos(Math.max(-1, Math.min(1, cosA))) * 180 / Math.PI;
+}
+
 // ── NDX ───────────────────────────────────────────────────────────────────────
 
 export function generateNdx(mapping) {
@@ -161,8 +182,31 @@ export function generateItp(mapping) {
     lines.push('; improper');
     lines.push('; i  j  k  l  funct  ref.angle  force_k');
     mapping.dihedrals.forEach(([a, b, c, d]) => {
+      const cogA = mapping.beads[a]?.cog, cogB = mapping.beads[b]?.cog;
+      const cogC = mapping.beads[c]?.cog, cogD = mapping.beads[d]?.cog;
+      const ang = (cogA && cogB && cogC && cogD)
+        ? dihedralDeg(cogA, cogB, cogC, cogD).toFixed(1)
+        : '0.0';
       lines.push(
-        `  ${String(a + 1).padStart(2)}  ${String(b + 1).padStart(2)}  ${String(c + 1).padStart(2)}  ${String(d + 1).padStart(2)}    2        0       100`
+        `  ${String(a + 1).padStart(2)}  ${String(b + 1).padStart(2)}  ${String(c + 1).padStart(2)}  ${String(d + 1).padStart(2)}    2  ${ang.padStart(7)}       100`
+      );
+    });
+    lines.push('');
+  }
+
+  // [dihedrals] proper
+  if (mapping.properDihedrals?.length > 0) {
+    lines.push('[dihedrals]');
+    lines.push('; proper');
+    lines.push('; i  j  k  l  funct  phi0  force_k  mult');
+    mapping.properDihedrals.forEach(([a, b, c, d]) => {
+      const cogA = mapping.beads[a]?.cog, cogB = mapping.beads[b]?.cog;
+      const cogC = mapping.beads[c]?.cog, cogD = mapping.beads[d]?.cog;
+      const phi = (cogA && cogB && cogC && cogD)
+        ? dihedralDeg(cogA, cogB, cogC, cogD).toFixed(1)
+        : '0.0';
+      lines.push(
+        `  ${String(a + 1).padStart(2)}  ${String(b + 1).padStart(2)}  ${String(c + 1).padStart(2)}  ${String(d + 1).padStart(2)}    1  ${phi.padStart(7)}       5.0    1`
       );
     });
     lines.push('');

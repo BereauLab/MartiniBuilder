@@ -39,7 +39,8 @@
             <div class="row items-center no-wrap">
               <div @click.stop="openMenu(idx)" style="width: 80px">
                 <q-input
-                  v-model="bead.type"
+                  :model-value="bead.type"
+                  @update:model-value="val => onTypeInput(idx, val)"
                   dense
                   outlined
                   placeholder="Type"
@@ -60,7 +61,7 @@
                       :key="opt"
                       clickable
                       @mousedown.prevent
-                      @click="bead.type = opt; closeMenu(idx)"
+                      @click="onTypePick(idx, opt)"
                     >
                       <q-item-section>{{ opt }}</q-item-section>
                     </q-item>
@@ -114,6 +115,11 @@
           </div>
           <div v-else class="text-caption text-grey-5 q-mt-xs">No heavy atoms.</div>
 
+          <div v-if="hasSharedCharge(bead)" class="row items-center no-wrap charge-warning q-mt-xs">
+            <q-icon name="warning" size="13px" class="q-mr-xs" />
+            <span>Charged atom shared with another bead — total charge may be miscounted.</span>
+          </div>
+
         </q-item>
       </q-list>
 
@@ -157,6 +163,24 @@ function getTypeOptions(bead) {
   return props.mapping.combinedMappings[bead.signature] || []
 }
 
+function onTypeInput(idx, val) {
+  const bead = props.mapping.beads[idx]
+  bead.type = val
+  // Clearing the field re-enables automatic type assignment for this bead.
+  bead.userEdited = val !== ''
+}
+
+function onTypePick(idx, opt) {
+  const bead = props.mapping.beads[idx]
+  bead.type = opt
+  bead.userEdited = true
+  closeMenu(idx)
+}
+
+function hasSharedCharge(bead) {
+  return (bead.properties || []).some(p => p.shared && p.charge !== 0)
+}
+
 function openMenu(idx) {
   const bead = props.mapping.beads[idx]
   if (!bead || getTypeOptions(bead).length === 0) return
@@ -189,6 +213,10 @@ function closeMenu(idx) {
 }
 .charge-pos { color: #b00; font-weight: 600; }
 .charge-neg { color: #00b; font-weight: 600; }
+.charge-warning {
+  font-size: 11px;
+  color: #b35900;
+}
 .chip-icon-wrap {
   display: inline-flex;
   align-items: center;

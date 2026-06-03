@@ -14,17 +14,19 @@ export class MoleculeMapping {
     this.molJson = null;
     this.coords = [];
     this.activeSection = 'beads';
-    this.bonds = [];             // array of [beadIdx1, beadIdx2], no VS involved
+    this.bonds = [];             // { a, b, constraint, direct } objects; excludes virtual sites
     this.virtualSites = [];      // array of bead indices
     this.vsConnections = {};     // { vsBeadIdx: [neighborBeadIdx, ...] }
     this.bondBeadCandidateIdx = null;
     this.angles = [];            // [[a, b, c], ...]
-    this.dihedrals = [];         // [[a, b, c, d], ...]
-    this.angleMode = null;       // 'angle' | 'dihedral' | null
+    this.dihedrals = [];         // [[a, b, c, d], ...] improper
+    this.properDihedrals = [];   // [[a, b, c, d], ...] proper
+    this.angleMode = null;       // 'angle' | 'dihedral' | 'proper' | null
     this.angleCandidates = [];   // bead indices being built
   }
 
   setRDKit(RDKit) {
+    // RDKit is loaded asynchronously by the parent component
     this.rdkit = markRaw(RDKit);
     if (this.sdfData && !this.molJson) {
       console.log("RDKit loaded late, reloading SDF data")
@@ -33,6 +35,7 @@ export class MoleculeMapping {
   }
 
   setActiveSection(name) {
+    // Switching sections clears any in-progress bond or angle assignment
     this.activeSection = name;
     this.bondBeadCandidateIdx = null;
     if (name !== 'angles') {
@@ -42,6 +45,7 @@ export class MoleculeMapping {
   }
 
   async loadMappingRules(file) {
+    // Load mapping rules from a JSON file
     try {
       this._applyMappingRulesJson(await file.text());
     } catch (e) {
@@ -50,6 +54,7 @@ export class MoleculeMapping {
   }
 
   loadMappingRulesFromJson(jsonString) {
+    // Load mapping rules from a JSON string (e.g. pasted by the user)
     try {
       this._applyMappingRulesJson(jsonString);
     } catch (e) {
@@ -58,9 +63,13 @@ export class MoleculeMapping {
   }
 
   _applyMappingRulesJson(text) {
+    // Apply mapping rules to the already created beads
     this.mappingRules = JSON.parse(text);
-    this.beads.forEach(bead => { bead.type = ''; });
-    this.beads.forEach((_, idx) => this.assignTypeIfMatches(idx));
+    this.beads.forEach((bead, idx) => {
+      if (bead.userEdited) return;
+      bead.type = '';
+      this.assignTypeIfMatches(idx);
+    });
   }
 
   loadSdf(data) {
@@ -75,6 +84,7 @@ export class MoleculeMapping {
     this.bondBeadCandidateIdx = null;
     this.angles = [];
     this.dihedrals = [];
+    this.properDihedrals = [];
     this.angleMode = null;
     this.angleCandidates = [];
     this._parseCoords(data);
@@ -89,7 +99,7 @@ export class MoleculeMapping {
     }
   }
 
-  // ── Bead assignment ────────────────────────────────────────────────────────
+  // --- Bead assignment ---
 
   toggleAtom(atomIndex, elem) {
     if (this.activeBeadIndex === null) {
@@ -100,6 +110,7 @@ export class MoleculeMapping {
         atom_indices: [atomIndex],
         elements: [elem],
         type: '',
+        userEdited: false,
         properties: [],
         signature: '[]',
         cog: { x: 0, y: 0, z: 0 },
@@ -113,7 +124,8 @@ export class MoleculeMapping {
       if (idx !== -1) {
         bead.atom_indices.splice(idx, 1);
         bead.elements.splice(idx, 1);
-        if (bead.atom_indices.length === 0) {
+        // A bead with no heavy atoms left (only orphaned hydrogens) is removed.
+        if (!bead.elements.some(e => e !== 'H')) {
           this.deleteBead(this.activeBeadIndex);
           return;
         }
@@ -137,56 +149,62 @@ export class MoleculeMapping {
 
   deleteBead(idx) {
     this.beads.splice(idx, 1);
-    // Renumber bonds and remove any referencing the deleted bead
+
+    // Helper to shift indices down after the removed bead.
+    const shift = i => (i > idx ? i - 1 : i);
+
+    // Drop references to the removed bead and shift higher indices down.
     this.bonds = this.bonds
       .filter(bond => bond.a !== idx && bond.b !== idx)
-      .map(bond => ({ ...bond, a: bond.a > idx ? bond.a - 1 : bond.a, b: bond.b > idx ? bond.b - 1 : bond.b }));
-    // Renumber virtual sites
-    this.virtualSites = this.virtualSites
-      .filter(v => v !== idx)
-      .map(v => v > idx ? v - 1 : v);
-    // Renumber vsConnections
+      .map(bond => ({ ...bond, a: shift(bond.a), b: shift(bond.b) }));
+    this.virtualSites = this.virtualSites.filter(v => v !== idx).map(shift);
+
     const newVsConn = {};
     Object.entries(this.vsConnections).forEach(([k, neighbors]) => {
       const vsIdx = parseInt(k);
       if (vsIdx === idx) return;
-      const newKey = vsIdx > idx ? vsIdx - 1 : vsIdx;
-      newVsConn[newKey] = neighbors.filter(n => n !== idx).map(n => n > idx ? n - 1 : n);
+      newVsConn[shift(vsIdx)] = neighbors.filter(n => n !== idx).map(shift);
     });
     this.vsConnections = newVsConn;
-    if (this.activeBeadIndex === idx) {
-      this.activeBeadIndex = null;
-    } else if (this.activeBeadIndex > idx) {
-      this.activeBeadIndex--;
-    }
-    if (this.bondBeadCandidateIdx === idx) {
-      this.bondBeadCandidateIdx = null;
-    } else if (this.bondBeadCandidateIdx !== null && this.bondBeadCandidateIdx > idx) {
-      this.bondBeadCandidateIdx--;
-    }
-    this.angles = this.angles
-      .filter(a => !a.includes(idx))
-      .map(a => a.map(i => i > idx ? i - 1 : i));
-    this.dihedrals = this.dihedrals
-      .filter(d => !d.includes(idx))
-      .map(d => d.map(i => i > idx ? i - 1 : i));
-    this.angleCandidates = this.angleCandidates
-      .filter(i => i !== idx)
-      .map(i => i > idx ? i - 1 : i);
-    // Recompute shared flags and type assignments for all remaining beads
+
+    if (this.activeBeadIndex === idx) this.activeBeadIndex = null;
+    else if (this.activeBeadIndex !== null) this.activeBeadIndex = shift(this.activeBeadIndex);
+
+    if (this.bondBeadCandidateIdx === idx) this.bondBeadCandidateIdx = null;
+    else if (this.bondBeadCandidateIdx !== null) this.bondBeadCandidateIdx = shift(this.bondBeadCandidateIdx);
+
+    // Angles and dihedrals containing the removed bead are dropped; others are shifted.
+    this.angles = this.angles.filter(a => !a.includes(idx)).map(a => a.map(shift));
+    this.dihedrals = this.dihedrals.filter(d => !d.includes(idx)).map(d => d.map(shift));
+    this.properDihedrals = this.properDihedrals.filter(d => !d.includes(idx)).map(d => d.map(shift));
+    this.angleCandidates = this.angleCandidates.filter(i => i !== idx).map(shift);
+
+    // Recompute shared flags and type assignments for the remaining beads.
     this.beads.forEach((_, i) => this.updateBeadProperties(i));
   }
 
-  // ── Bond management ────────────────────────────────────────────────────────
+  // --- Bond management ---
 
   hasBond(idx1, idx2) {
-    const a = Math.min(idx1, idx2), b = Math.max(idx1, idx2);
+    const a = Math.min(idx1, idx2);
+    const b = Math.max(idx1, idx2);
     return this.bonds.some(bond => bond.a === a && bond.b === b);
   }
 
   addBond(idx1, idx2, constraint = false) {
     if (!this.hasBond(idx1, idx2))
-      this.bonds.push({ a: Math.min(idx1, idx2), b: Math.max(idx1, idx2), constraint });
+      this.bonds.push({ a: Math.min(idx1, idx2), b: Math.max(idx1, idx2), constraint, direct: this._isDirectBond(idx1, idx2) });
+  }
+
+  _isDirectBond(idx1, idx2) {
+    if (!this.molJson) return true;
+    const bonds = this.molJson.molecules[0]?.bonds;
+    if (!bonds) return true;
+    const a1 = new Set(this.beads[idx1]?.atom_indices || []);
+    const a2 = new Set(this.beads[idx2]?.atom_indices || []);
+    return bonds.some(({ atoms: [a, b] }) =>
+      (a1.has(a) && a2.has(b)) || (a1.has(b) && a2.has(a))
+    );
   }
 
   removeBond(idx1, idx2) {
@@ -199,13 +217,14 @@ export class MoleculeMapping {
     this.bonds.splice(i, 1);
   }
 
-  // Called when clicking an atom while in bonds section (routes to index-based version)
   toggleBondBead(atomIndex) {
+    // Maps a clicked atom to its bead, then toggles a bond candidate.
     const beadIdx = this.beads.findIndex(b => b.atom_indices.includes(atomIndex));
     if (beadIdx !== -1) this.toggleBondBeadByIndex(beadIdx);
   }
 
   toggleBondBeadByIndex(beadIdx) {
+    // Saves/deletes a bond candidate or adds a bond if a candidate already exists
     if (this.bondBeadCandidateIdx === null) {
       this.bondBeadCandidateIdx = beadIdx;
     } else if (this.bondBeadCandidateIdx === beadIdx) {
@@ -224,7 +243,7 @@ export class MoleculeMapping {
     this.bondBeadCandidateIdx = null;
   }
 
-  // ── Angle / dihedral management ────────────────────────────────────────────
+  // --- Angle / dihedral management ---
 
   setAngleMode(mode) {
     this.angleMode = this.angleMode === mode ? null : mode;
@@ -232,6 +251,8 @@ export class MoleculeMapping {
   }
 
   toggleAngleBead(beadIdx) {
+    // Adds/removes a bead from the current angle/dihedral candidate list, and saves
+    // the angle/dihedral if the required number of candidates is reached.
     if (this.angleMode === null) return;
     const pos = this.angleCandidates.indexOf(beadIdx);
     if (pos !== -1) {
@@ -240,11 +261,12 @@ export class MoleculeMapping {
     }
     this.angleCandidates.push(beadIdx);
     const needed = this.angleMode === 'angle' ? 3 : 4;
-    if (this.angleCandidates.length === needed) {
-      if (this.angleMode === 'angle') this.angles.push([...this.angleCandidates]);
-      else this.dihedrals.push([...this.angleCandidates]);
-      this.angleCandidates = [];
-    }
+    if (this.angleCandidates.length < needed) return;
+    const target = this.angleMode === 'angle' ? this.angles
+      : this.angleMode === 'dihedral' ? this.dihedrals
+        : this.properDihedrals;
+    target.push([...this.angleCandidates]);
+    this.angleCandidates = [];
   }
 
   clearAngleCandidates() {
@@ -253,8 +275,9 @@ export class MoleculeMapping {
 
   deleteAngleAt(i) { this.angles.splice(i, 1); }
   deleteDihedralAt(i) { this.dihedrals.splice(i, 1); }
+  deleteProperDihedralAt(i) { this.properDihedrals.splice(i, 1); }
 
-  // ── Virtual site management ────────────────────────────────────────────────
+  // --- Virtual site management ---
 
   addVirtualSite(beadIdx) {
     if (!this.virtualSites.includes(beadIdx)) this.virtualSites.push(beadIdx);
@@ -276,7 +299,7 @@ export class MoleculeMapping {
     const i = this.virtualSites.indexOf(beadIdx);
     if (i === -1) return;
     this.virtualSites.splice(i, 1);
-    // Restore connections as constraint bonds (only to non-VS neighbours)
+    // Restore connections to non-VS neighbours as constraint bonds.
     const connections = this.vsConnections[beadIdx] || [];
     connections.forEach(neighborIdx => {
       if (!this.virtualSites.includes(neighborIdx))
@@ -285,17 +308,20 @@ export class MoleculeMapping {
     delete this.vsConnections[beadIdx];
   }
 
-  // ── Auto-assign ────────────────────────────────────────────────────────────
+  // --- Auto-assign ---
 
   autoAssignBondsAndVS() {
     if (!this.molJson) return;
     const molObj = this.molJson.molecules[0];
     if (!molObj?.bonds) return;
 
-    const atomToBead = new Map();
+    // Map each heavy atom to the bead(s) containing it (an atom may be shared).
+    const atomToBeads = new Map();
     this.beads.forEach((bead, idx) => {
       bead.atom_indices.forEach((aIdx, i) => {
-        if (bead.elements[i] !== 'H') atomToBead.set(aIdx, idx);
+        if (bead.elements[i] === 'H') return;
+        if (!atomToBeads.has(aIdx)) atomToBeads.set(aIdx, []);
+        atomToBeads.get(aIdx).push(idx);
       });
     });
 
@@ -303,7 +329,7 @@ export class MoleculeMapping {
       molObj.extensions?.find(e => e.name === 'rdkitRepresentation')?.aromaticAtoms || []
     );
 
-    // Build adjacency for ALL atoms
+    // Build adjacency over all atoms.
     const adj = new Map();
     molObj.bonds.forEach(({ atoms: [a1, a2] }) => {
       if (!adj.has(a1)) adj.set(a1, []);
@@ -312,39 +338,56 @@ export class MoleculeMapping {
       adj.get(a2).push(a1);
     });
 
-    // cgBondMap: key → { a, b, constraint }
-    // Direct bonds that are aromatic → constraint; 2-hop bonds → never constraint
+    // --- Bond assignment ---
+
+    // CG bonds keyed by bead pair. Aromatic direct bonds become constraints;
+    // 2-hop bonds are never constraints. Flags accumulate across contributions.
     const cgBondMap = new Map();
 
-    molObj.bonds.forEach(({ atoms: [a1, a2] }) => {
-      const bA = atomToBead.get(a1), bB = atomToBead.get(a2);
-      if (bA === undefined || bB === undefined || bA === bB) return;
-      const key = `${Math.min(bA, bB)}-${Math.max(bA, bB)}`;
-      const isAromatic = aromaticAtoms.has(a1) && aromaticAtoms.has(a2);
-      if (!cgBondMap.has(key)) {
-        cgBondMap.set(key, { a: Math.min(bA, bB), b: Math.max(bA, bB), constraint: isAromatic });
-      } else if (isAromatic) {
-        cgBondMap.get(key).constraint = true;
+    const addCgBond = (bA, bB, { constraint, direct }) => {
+      if (bA === bB) return;
+      const a = Math.min(bA, bB), b = Math.max(bA, bB);
+      const existing = cgBondMap.get(`${a}-${b}`);
+      if (existing) {
+        if (direct) existing.direct = true;
+        if (constraint) existing.constraint = true;
+      } else {
+        cgBondMap.set(`${a}-${b}`, { a, b, constraint, direct });
       }
+    };
+
+    // Direct bonds: an atomic bond crosses from one bead to another.
+    molObj.bonds.forEach(({ atoms: [a1, a2] }) => {
+      const beadsA = atomToBeads.get(a1) || [];
+      const beadsB = atomToBeads.get(a2) || [];
+      const isAromatic = aromaticAtoms.has(a1) && aromaticAtoms.has(a2);
+      beadsA.forEach(bA => beadsB.forEach(bB => addCgBond(bA, bB, { constraint: isAromatic, direct: true })));
     });
 
+    // 2-hop bonds: two beads share a common atomic neighbour.
     adj.forEach((neighbours) => {
       for (let i = 0; i < neighbours.length - 1; i++) {
-        const bA = atomToBead.get(neighbours[i]);
-        if (bA === undefined) continue;
+        const beadsI = atomToBeads.get(neighbours[i]) || [];
+        if (!beadsI.length) continue;
         for (let j = i + 1; j < neighbours.length; j++) {
-          const bB = atomToBead.get(neighbours[j]);
-          if (bB === undefined || bB === bA) continue;
-          const key = `${Math.min(bA, bB)}-${Math.max(bA, bB)}`;
-          if (!cgBondMap.has(key))
-            cgBondMap.set(key, { a: Math.min(bA, bB), b: Math.max(bA, bB), constraint: false });
+          const beadsJ = atomToBeads.get(neighbours[j]) || [];
+          beadsI.forEach(bA => beadsJ.forEach(bB => addCgBond(bA, bB, { constraint: false, direct: false })));
         }
       }
     });
 
+    // Beads sharing a heavy atom are always connected by a constraint bond
+    atomToBeads.forEach(beadList => {
+      for (let i = 0; i < beadList.length - 1; i++)
+        for (let j = i + 1; j < beadList.length; j++)
+          addCgBond(beadList[i], beadList[j], { constraint: true, direct: true });
+    });
+
+    // --- Virtual site selection ---
+
     const tentativeBonds = [...cgBondMap.values()];
 
-    // VS candidates: beads with ≥4 constraint bonds
+    // VS candidates: beads with 4 or more constraint bonds.
     const constraintCounts = new Array(this.beads.length).fill(0);
     tentativeBonds.forEach(({ a, b, constraint }) => {
       if (constraint) { constraintCounts[a]++; constraintCounts[b]++; }
@@ -375,8 +418,8 @@ export class MoleculeMapping {
       !this.virtualSites.includes(a) && !this.virtualSites.includes(b)
     );
 
-    // For each VS constructed by exactly 4 beads, add the shorter diagonal
-    // constraint between the non-adjacent pair to prevent ring shear.
+    // For each VS with exactly 4 constructors, add the shortest unbonded
+    // diagonal between them as a constraint.
     const bondKeySet = new Set(this.bonds.map(({ a, b }) => `${a}-${b}`));
     this.virtualSites.forEach(vsIdx => {
       const cs = this.vsConnections[vsIdx] || [];
@@ -398,7 +441,7 @@ export class MoleculeMapping {
       if (!shortest.pair) return;
       const [p, q] = shortest.pair;
       const key = `${Math.min(p, q)}-${Math.max(p, q)}`;
-      this.bonds.push({ a: Math.min(p, q), b: Math.max(p, q), constraint: true });
+      this.bonds.push({ a: Math.min(p, q), b: Math.max(p, q), constraint: true, direct: this._isDirectBond(p, q) });
       bondKeySet.add(key);
     });
   }
@@ -406,6 +449,7 @@ export class MoleculeMapping {
   autoAssignAnglesAndDihedrals() {
     this.angles = [];
     this.dihedrals = [];
+    this.properDihedrals = [];
 
     const n = this.beads.length;
     const adj = Array.from({ length: n }, () => []);
@@ -421,7 +465,7 @@ export class MoleculeMapping {
     const hasBond = (a, b) => bondKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
     const isConstraint = (a, b) => constraintKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
 
-    // 1. Angles: Homogeneous distribution
+    // 1. Angles: each bead triplet a-b-c with bonds a-b and b-c but no bond a-c
     const angleSet = new Set();
     for (let b = 0; b < n; b++) {
       const nb = adj[b];
@@ -429,6 +473,7 @@ export class MoleculeMapping {
         for (let j = i + 1; j < nb.length; j++) {
           const a = nb[i], c = nb[j];
           if (hasBond(a, c)) continue; // Triangle exclusion
+          if (isConstraint(a, b) && isConstraint(b, c)) continue; // No angles between constraint bonds
           const key = `${Math.min(a, c)}-${b}-${Math.max(a, c)}`;
           if (!angleSet.has(key)) {
             angleSet.add(key);
@@ -438,6 +483,7 @@ export class MoleculeMapping {
       }
     }
 
+    // Setup dihedral helper to avoid duplicates across the different generation rules below.
     const dihSet = new Set();
     const addDih = (p0, p1, p2, p3) => {
       const key = `${p0}-${p1}-${p2}-${p3}`;
@@ -447,14 +493,13 @@ export class MoleculeMapping {
       }
     };
 
-    // 2. Improper dihedrals (Case 1): Symmetric Assignment
-    // Generates exactly 'k' impropers symmetrically distributed around the hub
+    // 2. Improper dihedrals: k-2 distributed around each hub with k constraint neighbours.
     for (let b = 0; b < n; b++) {
       const constraintNb = adj[b].filter(nb => isConstraint(b, nb));
       const k = constraintNb.length;
       if (k < 3) continue;
 
-      for (let i = 0; i < k; i++) {
+      for (let i = 0; i < k - 2; i++) {
         const p0 = constraintNb[i];
         const p1 = b; // Central hub
         const p2 = constraintNb[(i + 1) % k];
@@ -463,7 +508,7 @@ export class MoleculeMapping {
       }
     }
 
-    // 3. Improper dihedrals (Case 2): Virtual site constructor rings
+    // 3. Improper dihedrals: Virtual site constructor rings
     this.virtualSites.forEach(vsIdx => {
       const cs = this.vsConnections[vsIdx] || [];
       if (cs.length < 4) return;
@@ -484,8 +529,67 @@ export class MoleculeMapping {
         addDih(p0, p1, p2, p3);
       }
     });
+
+    // 4. Planarity impropers for elementary all-constraint rings of length 4 or more.
+    const constraintAdj = Array.from({ length: n }, (_, u) =>
+      adj[u].filter(v => isConstraint(u, v))
+    );
+    const foundCycleKeys = new Set();
+
+    // Each cycle is started only from its smallest member; rings with a chord
+    // (a constraint bond between non-adjacent members) are rejected as non-elementary.
+    for (let start = 0; start < n; start++) {
+      const dfs = (curr, path) => {
+        if (path.length > 8) return;
+        for (const nb of constraintAdj[curr]) {
+          if (nb === start && path.length >= 4) {
+            const key = [...path].sort((a, b) => a - b).join(',');
+            if (foundCycleKeys.has(key)) continue;
+            const cycleSet = new Set(path);
+            const cycleEdgeKey = (u, v) => `${Math.min(u, v)}-${Math.max(u, v)}`;
+            const ringEdges = new Set(
+              path.map((u, i) => cycleEdgeKey(u, path[(i + 1) % path.length]))
+            );
+            ringEdges.add(cycleEdgeKey(path[path.length - 1], start));
+            const hasChord = path.some(u =>
+              constraintAdj[u].some(v => cycleSet.has(v) && !ringEdges.has(cycleEdgeKey(u, v)))
+            );
+            if (hasChord) continue;
+            foundCycleKeys.add(key);
+            addDih(path[0], path[1], path[2], path[3]);
+          } else if (nb > start && !path.includes(nb)) {
+            path.push(nb);
+            dfs(nb, path);
+            path.pop();
+          }
+        }
+      };
+      dfs(start, [start]);
+    }
+
+    // 5. Proper dihedrals: torsions across rotatable (non-constraint) bonds between rigid sub-units.
+    const properDihSet = new Set();
+    this.bonds.forEach(({ a: j, b: k, constraint, direct }) => {
+      if (constraint || direct === false) return;
+      const jNb = adj[j].filter(x => x !== k);
+      const kNb = adj[k].filter(x => x !== j);
+      if (!jNb.length || !kNb.length) return;
+      const jHasConstraint = jNb.some(nb => isConstraint(j, nb));
+      const kHasConstraint = kNb.some(nb => isConstraint(k, nb));
+      if (!jHasConstraint && !kHasConstraint) return;
+      const iCand = [...jNb.filter(nb => isConstraint(j, nb)), ...jNb.filter(nb => !isConstraint(j, nb))];
+      const lCand = [...kNb.filter(nb => isConstraint(k, nb)), ...kNb.filter(nb => !isConstraint(k, nb))];
+      const i = iCand[0], l = lCand[0];
+      if (i === l) return;
+      const fwd = `${i}-${j}-${k}-${l}`, rev = `${l}-${k}-${j}-${i}`;
+      if (!properDihSet.has(fwd) && !properDihSet.has(rev)) {
+        properDihSet.add(fwd);
+        this.properDihedrals.push([i, j, k, l]);
+      }
+    });
   }
 
+  // Branch-and-bound search for the largest set of candidates with no edge between any two.
   _maxIndependentSet(candidates, adjMap) {
     let best = [];
     const n = candidates.length;
@@ -508,7 +612,7 @@ export class MoleculeMapping {
     return best;
   }
 
-  // ── Atom / bead properties ─────────────────────────────────────────────────
+  // --- Atom / bead properties ---
 
   _getBondedHydrogenIndices(heavyAtomIndex) {
     if (!this.molJson) return [];
@@ -613,32 +717,27 @@ export class MoleculeMapping {
 
   get combinedMappings() {
     const result = {};
-    for (const [sig, types] of Object.entries(defaultMappings)) {
-      result[sig] = [...types];
-    }
-    if (this.mappingRules) {
-      for (const [sig, types] of Object.entries(this.mappingRules)) {
-        if (result[sig]) {
-          const merged = [...types];
-          result[sig].forEach(t => { if (!merged.includes(t)) merged.push(t); });
-          result[sig] = merged;
-        } else {
-          result[sig] = [...types];
-        }
-      }
-    }
+    const add = (sig, types) => {
+      if (!result[sig]) result[sig] = [];
+      types.forEach(t => { if (!result[sig].includes(t)) result[sig].push(t); });
+    };
+    // User rules are added first so they take precedence over defaults when suggesting a type.
+    Object.entries(this.mappingRules || {}).forEach(([sig, types]) => add(sig, types));
+    Object.entries(defaultMappings).forEach(([sig, types]) => add(sig, types));
     return result;
   }
 
   assignTypeIfMatches(idx) {
     const bead = this.beads[idx];
+    if (bead.userEdited) return;
     if (!bead.properties || bead.properties.length === 0) { bead.type = ''; return; }
     const types = this.combinedMappings[bead.signature];
     bead.type = types?.[0] ?? '';
   }
 
-  // ── Geometry helpers ───────────────────────────────────────────────────────
+  // --- Geometry helpers ---
 
+  // Parse atom coordinates from the SDF V2000 atom block.
   _parseCoords(data) {
     this.coords = [];
     if (!data) return;
