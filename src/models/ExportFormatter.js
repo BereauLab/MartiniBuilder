@@ -35,12 +35,11 @@ export function generateGro(mapping) {
   const molName = getMoleculeName(mapping);
   const lines = [molName, String(mapping.beads.length)];
   mapping.beads.forEach((bead, idx) => {
-    const atomName = (bead.type || `B${idx + 1}`).substring(0, 5);
     const { cog } = bead;
     const line =
       String(1).padStart(5) +
       'LIG'.padEnd(5) +
-      atomName.padStart(5) +
+      `B${idx + 1}`.padStart(5) +
       String(idx + 1).padStart(5) +
       (cog.x / 10).toFixed(3).padStart(8) +
       (cog.y / 10).toFixed(3).padStart(8) +

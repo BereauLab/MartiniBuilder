@@ -78,7 +78,7 @@ class Api:
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, "w") as f:
             f.write(content)
-        print(f"Saved: {path}")
+        print(f"Saved: {os.path.abspath(path)}")
         return True
 
 
