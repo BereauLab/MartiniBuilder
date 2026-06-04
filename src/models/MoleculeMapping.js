@@ -452,92 +452,83 @@ export class MoleculeMapping {
     this.properDihedrals = [];
 
     const n = this.beads.length;
+
+    // Beads that co-construct a virtual site form a rigid planar unit, so their mutual
+    // bonds are treated as direct below; this lets the constructor ring get a planarity
+    // improper even when its beads are linked only by two-hop bonds.
+    const coConstructorPairs = new Set();
+    Object.values(this.vsConnections).forEach(cs => {
+      for (let i = 0; i < cs.length - 1; i++)
+        for (let j = i + 1; j < cs.length; j++)
+          coConstructorPairs.add(`${Math.min(cs[i], cs[j])}-${Math.max(cs[i], cs[j])}`);
+    });
+
+    // adj: all bonds. directAdj: direct bonds only (two-hop excluded). Plus lookups.
     const adj = Array.from({ length: n }, () => []);
+    const directAdj = Array.from({ length: n }, () => []);
     const bondKeySet = new Set();
     const constraintKeySet = new Set();
-    this.bonds.forEach(({ a, b, constraint }) => {
+    this.bonds.forEach(({ a, b, constraint, direct }) => {
       adj[a].push(b);
       adj[b].push(a);
       const key = `${Math.min(a, b)}-${Math.max(a, b)}`;
+      if (direct !== false || coConstructorPairs.has(key)) {
+        directAdj[a].push(b);
+        directAdj[b].push(a);
+      }
       bondKeySet.add(key);
       if (constraint) constraintKeySet.add(key);
     });
     const hasBond = (a, b) => bondKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
     const isConstraint = (a, b) => constraintKeySet.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
 
-    // 1. Angles: each bead triplet a-b-c with bonds a-b and b-c but no bond a-c
-    const angleSet = new Set();
+    // 1. Angles: triplet a-b-c with bonds a-b, b-c and no bond a-c. The cross-angle of
+    // two fused triangles is skipped (a, c and a shared neighbour d all direct neighbours
+    // of b); that hinge is held by the improper from case 2 instead.
     for (let b = 0; b < n; b++) {
       const nb = adj[b];
+      const dirNb = directAdj[b];
       for (let i = 0; i < nb.length - 1; i++) {
         for (let j = i + 1; j < nb.length; j++) {
           const a = nb[i], c = nb[j];
           if (hasBond(a, c)) continue; // Triangle exclusion
-          if (isConstraint(a, b) && isConstraint(b, c)) continue; // No angles between constraint bonds
-          const key = `${Math.min(a, c)}-${b}-${Math.max(a, c)}`;
-          if (!angleSet.has(key)) {
-            angleSet.add(key);
-            this.angles.push([a, b, c]);
-          }
+          if (isConstraint(a, b) && isConstraint(b, c)) continue; // Both legs constrained
+          if (dirNb.includes(a) && dirNb.includes(c) &&
+            dirNb.some(d => d !== a && d !== c && hasBond(a, d) && hasBond(c, d))) continue; // Fused-triangle hinge
+          this.angles.push([a, b, c]);
         }
       }
     }
 
-    // Setup dihedral helper to avoid duplicates across the different generation rules below.
-    const dihSet = new Set();
+    // Adds an improper, deduplicated by the unordered set of its four beads: four beads
+    // have one out-of-plane degree of freedom, so every ordering restrains the same thing.
+    const dihBeadSet = new Set();
     const addDih = (p0, p1, p2, p3) => {
-      const key = `${p0}-${p1}-${p2}-${p3}`;
-      if (!dihSet.has(key)) {
-        dihSet.add(key);
-        this.dihedrals.push([p0, p1, p2, p3]);
-      }
+      const key = [p0, p1, p2, p3].sort((a, b) => a - b).join('-');
+      if (dihBeadSet.has(key)) return;
+      dihBeadSet.add(key);
+      this.dihedrals.push([p0, p1, p2, p3]);
     };
 
-    // 2. Improper dihedrals: k-2 distributed around each hub with k constraint neighbours.
+    // 2. Improper per hub: for each bead with >= 3 direct neighbours (two-hop excluded),
+    // pin every neighbour past the first two to the plane of the hub and its first two.
+    // Fixes local planarity and chirality (substituents, fused-triangle hinges). The hub
+    // is listed first, and the 4-bead dedup keeps one improper per rigid unit.
     for (let b = 0; b < n; b++) {
-      const constraintNb = adj[b].filter(nb => isConstraint(b, nb));
-      const k = constraintNb.length;
-      if (k < 3) continue;
-
-      for (let i = 0; i < k - 2; i++) {
-        const p0 = constraintNb[i];
-        const p1 = b; // Central hub
-        const p2 = constraintNb[(i + 1) % k];
-        const p3 = constraintNb[(i + 2) % k];
-        addDih(p0, p1, p2, p3);
-      }
+      const nb = directAdj[b];
+      if (nb.length < 3) continue;
+      const [r1, r2] = nb;
+      for (let i = 2; i < nb.length; i++) addDih(b, r1, r2, nb[i]);
     }
 
-    // 3. Improper dihedrals: Virtual site constructor rings
-    this.virtualSites.forEach(vsIdx => {
-      const cs = this.vsConnections[vsIdx] || [];
-      if (cs.length < 4) return;
-      const csSet = new Set(cs);
-      const ringAdj = new Map(cs.map(c => [c, adj[c].filter(nb => csSet.has(nb))]));
-      const visited = new Set([cs[0]]);
-      const path = [cs[0]];
-      let curr = cs[0];
-      while (path.length < cs.length) {
-        const next = (ringAdj.get(curr) || []).find(nb => !visited.has(nb));
-        if (!next) break;
-        visited.add(next);
-        path.push(next);
-        curr = next;
-      }
-      if (path.length >= 4) {
-        const [p0, p1, p2, p3] = path;
-        addDih(p0, p1, p2, p3);
-      }
-    });
-
-    // 4. Planarity impropers for elementary all-constraint rings of length 4 or more.
+    // 3. Planarity impropers for all-constraint rings. A DFS finds elementary constraint
+    // cycles of length >= 4: each is started only from its smallest member, and any cycle
+    // with a chord (constraint bond between non-adjacent members) is rejected.
     const constraintAdj = Array.from({ length: n }, (_, u) =>
       adj[u].filter(v => isConstraint(u, v))
     );
     const foundCycleKeys = new Set();
 
-    // Each cycle is started only from its smallest member; rings with a chord
-    // (a constraint bond between non-adjacent members) are rejected as non-elementary.
     for (let start = 0; start < n; start++) {
       const dfs = (curr, path) => {
         if (path.length > 8) return;
@@ -567,7 +558,9 @@ export class MoleculeMapping {
       dfs(start, [start]);
     }
 
-    // 5. Proper dihedrals: torsions across rotatable (non-constraint) bonds between rigid sub-units.
+    // 4. Proper dihedrals: one torsion i-j-k-l across each rotatable (non-constraint,
+    // direct) bond j-k, where at least one side is rigid. i and l are neighbours of j
+    // and k, preferring a constrained neighbour so the torsion references a rigid frame.
     const properDihSet = new Set();
     this.bonds.forEach(({ a: j, b: k, constraint, direct }) => {
       if (constraint || direct === false) return;
