@@ -73,6 +73,60 @@ export function generateGro(mapping) {
 
 // ── ITP helpers ───────────────────────────────────────────────────────────────
 
+const NREXCL = 1;
+const EXCLUSION_CUTOFF_NM = 1.0;
+
+// With nrexcl = 1 GROMACS only excludes directly bonded beads. Every other pair
+// (virtual sites included) within EXCLUSION_CUTOFF_NM along the bond path — the
+// shortest sum of bond lengths connecting them — is excluded explicitly here.
+// Edges are bonds plus VS↔constructor links, weighted by COG distance; a bounded
+// Dijkstra from each bead collects the reachable ones. Returns a Map of bead
+// index → set of higher-indexed partner bead indices.
+function computeBondPathExclusions(mapping) {
+  const byOwner = new Map();
+  const n = mapping.beads.length;
+
+  const adj = Array.from({ length: n }, () => []); // { to, w } with w in nm
+  const addEdge = (a, b) => {
+    const cogA = mapping.beads[a]?.cog, cogB = mapping.beads[b]?.cog;
+    if (!cogA || !cogB) return;
+    const w = dist(cogA, cogB) / 10; // COGs are in Angstrom
+    adj[a].push({ to: b, w });
+    adj[b].push({ to: a, w });
+  };
+  mapping.bonds.forEach(({ a, b }) => addEdge(a, b));
+  mapping.virtualSites.forEach(vsIdx =>
+    (mapping.vsConnections[vsIdx] || []).forEach(c => { if (c >= 0 && c < n) addEdge(vsIdx, c); })
+  );
+
+  const seen = new Set();
+  for (let src = 0; src < n; src++) {
+    if (!mapping.beads[src]?.cog) continue;
+    const distMap = new Map([[src, 0]]);
+    const settled = new Set();
+    for (;;) {
+      let u = -1, best = Infinity;
+      distMap.forEach((d, node) => { if (!settled.has(node) && d < best) { best = d; u = node; } });
+      if (u === -1) break;
+      settled.add(u);
+      for (const { to, w } of adj[u]) {
+        const nd = best + w;
+        if (nd < EXCLUSION_CUTOFF_NM && nd < (distMap.get(to) ?? Infinity)) distMap.set(to, nd);
+      }
+    }
+    distMap.forEach((_, other) => {
+      if (other === src) return;
+      const owner = Math.min(src, other), partner = Math.max(src, other);
+      const key = `${owner}-${partner}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      if (!byOwner.has(owner)) byOwner.set(owner, new Set());
+      byOwner.get(owner).add(partner);
+    });
+  }
+  return byOwner;
+}
+
 function computeMasses(mapping) {
   const masses = mapping.beads.map(bead => {
     const t = bead.type || '';
@@ -105,7 +159,6 @@ function computeCharges(mapping) {
 // ── ITP ───────────────────────────────────────────────────────────────────────
 
 export function generateItp(mapping) {
-  const n = mapping.beads.length;
   const masses = computeMasses(mapping);
   const charges = computeCharges(mapping);
   const lines = [];
@@ -113,7 +166,7 @@ export function generateItp(mapping) {
   // [moleculetype]
   lines.push('[moleculetype]');
   lines.push('; molname    nrexcl');
-  lines.push(`  ligand           1`);
+  lines.push(`  ligand           ${NREXCL}`);
   lines.push('');
 
   // [atoms]
@@ -206,7 +259,7 @@ export function generateItp(mapping) {
         ? dihedralDeg(cogA, cogB, cogC, cogD).toFixed(1)
         : '0.0';
       lines.push(
-        `  ${String(a + 1).padStart(2)}  ${String(b + 1).padStart(2)}  ${String(c + 1).padStart(2)}  ${String(d + 1).padStart(2)}    1  ${phi.padStart(7)}       5.0    1`
+        `  ${String(a + 1).padStart(2)}  ${String(b + 1).padStart(2)}  ${String(c + 1).padStart(2)}  ${String(d + 1).padStart(2)}    1  ${phi.padStart(7)}      50.0    1`
       );
     });
     lines.push('');
@@ -223,11 +276,16 @@ export function generateItp(mapping) {
     lines.push('');
   }
 
-  // [exclusions] — all-vs-all, upper triangle
-  lines.push('[exclusions]');
-  for (let i = 1; i <= n - 1; i++) {
-    const row = Array.from({ length: n - i + 1 }, (_, k) => i + k);
-    lines.push(' ' + row.join(' '));
+  // [exclusions]
+  const exclusions = computeBondPathExclusions(mapping);
+  if (exclusions.size > 0) {
+    lines.push('[exclusions]');
+    lines.push('; bead  excluded beads');
+    [...exclusions.keys()].sort((a, b) => a - b).forEach(i => {
+      const others = [...exclusions.get(i)].sort((a, b) => a - b).map(k => k + 1);
+      lines.push(`  ${String(i + 1).padStart(3)}  ${others.join(' ')}`);
+    });
+    lines.push('');
   }
 
   return lines.join('\n') + '\n';

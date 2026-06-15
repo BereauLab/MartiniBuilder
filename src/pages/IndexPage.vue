@@ -19,8 +19,14 @@ import rdkitWasmUrl from '@rdkit/rdkit/dist/RDKit_minimal.wasm?url'
 const mapping = reactive(new MoleculeMapping())
 
 function tryLoadCliSdf() {
-  window.pywebview?.api?.get_initial_sdf().then(sdf => {
-    if (sdf) mapping.loadSdf(sdf)
+  const api = window.pywebview?.api
+  if (!api?.get_initial_sdf) return
+  Promise.all([
+    api.get_initial_sdf(),
+    api.get_initial_ndx ? api.get_initial_ndx() : Promise.resolve(null),
+    api.get_initial_itp ? api.get_initial_itp() : Promise.resolve(null),
+  ]).then(([sdf, ndx, itp]) => {
+    if (sdf) mapping.loadFiles(sdf, ndx, itp)
   })
 }
 

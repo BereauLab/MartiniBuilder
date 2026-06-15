@@ -99,6 +99,10 @@
                 <span class="text-caption">{{ mapping.beads[beadIdx]?.type || ('Bead ' + (beadIdx + 1)) }}</span>
               </template>
             </div>
+            <div v-if="dihedralWarning(dihedral)" class="row items-center no-wrap collinear-warning q-mt-xs">
+              <q-icon name="warning" size="13px" class="q-mr-xs" />
+              <span>Near-collinear beads ({{ dihedralWarning(dihedral).toFixed(0) }}°) — dihedral plane is ill-defined.</span>
+            </div>
           </q-item-section>
           <q-item-section side>
             <q-btn flat round dense icon="close" color="negative" size="xs" @click="mapping.deleteDihedralAt(i)" />
@@ -145,6 +149,10 @@
                 <span class="text-caption">{{ mapping.beads[beadIdx]?.type || ('Bead ' + (beadIdx + 1)) }}</span>
               </template>
             </div>
+            <div v-if="dihedralWarning(dihedral)" class="row items-center no-wrap collinear-warning q-mt-xs">
+              <q-icon name="warning" size="13px" class="q-mr-xs" />
+              <span>Near-collinear beads ({{ dihedralWarning(dihedral).toFixed(0) }}°) — dihedral plane is ill-defined.</span>
+            </div>
           </q-item-section>
           <q-item-section side>
             <q-btn flat round dense icon="close" color="negative" size="xs" @click="mapping.deleteProperDihedralAt(i)" />
@@ -160,10 +168,30 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   mapping: {
     type: Object,
     required: true
   }
 })
+
+// Beads of a dihedral are near-collinear when one of its two plane-defining
+// angles approaches 180°, leaving that plane's normal — and hence the dihedral
+// — ill-defined. Returns the offending angle (degrees) when above threshold.
+const COLLINEAR_THRESHOLD = 160
+
+function dihedralWarning(dihedral) {
+  const angles = props.mapping.dihedralPlaneAngles(dihedral)
+  if (!angles) return null
+  const max = Math.max(angles.abc, angles.bcd)
+  return max > COLLINEAR_THRESHOLD ? max : null
+}
 </script>
+
+<style scoped>
+.collinear-warning {
+  font-size: 11px;
+  color: #b35900;
+  white-space: normal;
+}
+</style>

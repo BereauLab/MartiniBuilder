@@ -4,8 +4,13 @@ Martini Mapper desktop CLI.
 
 Usage:
     python app.py [--input molecule.sdf] [--mapping rules.json]
+                  [--input-ndx mapping.ndx] [--input-itp mapping.itp]
                   [--output-gro ligand.gro] [--output-itp ligand.itp]
                   [--output-ndx mapping.ndx] [--output-json bead-mapping.json]
+
+Supplying --input-ndx restores the atom-to-bead mapping; additionally supplying
+--input-itp restores bead types, bonds, angles, dihedrals and virtual sites.
+--input-itp requires --input-ndx.
 
 Requires the app to be built first:
     quasar build
@@ -52,23 +57,37 @@ class Api:
     """Methods exposed to the web app via window.pywebview.api.*"""
 
     def __init__(
-        self, sdf_path: str | None, mapping_path: str | None, outputs: dict[str, str]
+        self,
+        sdf_path: str | None,
+        mapping_path: str | None,
+        ndx_path: str | None,
+        itp_path: str | None,
+        outputs: dict[str, str],
     ):
         self._sdf_path = os.path.abspath(sdf_path) if sdf_path else None
         self._mapping_path = os.path.abspath(mapping_path) if mapping_path else None
+        self._ndx_path = os.path.abspath(ndx_path) if ndx_path else None
+        self._itp_path = os.path.abspath(itp_path) if itp_path else None
         self._outputs = outputs
 
-    def get_initial_sdf(self):
-        if self._sdf_path and os.path.isfile(self._sdf_path):
-            with open(self._sdf_path) as f:
+    @staticmethod
+    def _read(path: str | None):
+        if path and os.path.isfile(path):
+            with open(path) as f:
                 return f.read()
         return None
 
+    def get_initial_sdf(self):
+        return self._read(self._sdf_path)
+
     def get_initial_mapping(self):
-        if self._mapping_path and os.path.isfile(self._mapping_path):
-            with open(self._mapping_path) as f:
-                return f.read()
-        return None
+        return self._read(self._mapping_path)
+
+    def get_initial_ndx(self):
+        return self._read(self._ndx_path)
+
+    def get_initial_itp(self):
+        return self._read(self._itp_path)
 
     def save_file(self, file_type: str, content: str):
         path = self._outputs.get(file_type)
@@ -94,6 +113,19 @@ def main():
         "-m",
         metavar="JSON",
         help="Bead-type mapping rules JSON to load on startup",
+    )
+    parser.add_argument(
+        "--input-ndx",
+        metavar="NDX",
+        help="Existing mapping.ndx to restore the atom-to-bead assignment",
+    )
+    parser.add_argument(
+        "--input-itp",
+        metavar="ITP",
+        help=(
+            "Existing mapping.itp to restore bead types, bonds, angles, "
+            "dihedrals and virtual sites (requires --input-ndx)"
+        ),
     )
     parser.add_argument(
         "--output-gro",
@@ -126,6 +158,9 @@ def main():
         print('Run "quasar build" first.')
         sys.exit(1)
 
+    if args.input_itp and not args.input_ndx:
+        parser.error("--input-itp requires --input-ndx")
+
     outputs = {
         "gro": args.output_gro,
         "itp": args.output_itp,
@@ -137,7 +172,7 @@ def main():
     server = http.server.HTTPServer(("127.0.0.1", port), SpaHandler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
-    api = Api(args.input, args.mapping, outputs)
+    api = Api(args.input, args.mapping, args.input_ndx, args.input_itp, outputs)
     webview.create_window(
         "Martini Mapper",
         url=f"http://127.0.0.1:{port}",

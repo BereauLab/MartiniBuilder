@@ -1,7 +1,7 @@
 <template>
   <div class="col" style="position: relative; height: 100%;">
     <div ref="viewerDiv" style="width: 100%; height: 100%;"></div>
-    <FileLoaderOverlay v-if="!moleculeLoaded" @loadSdf="mapping.loadSdf($event)" />
+    <FileLoaderOverlay v-if="!moleculeLoaded" @loadFiles="mapping.loadFiles($event.sdfData, $event.ndxText, $event.itpText)" />
   </div>
 </template>
 
@@ -81,12 +81,18 @@ function loadMolecule(data) {
   viewer.setStyle({elem: 'H'}, {stick:{radius: 0.07}, sphere:{radius: 0.18}})
 
   viewer.setClickable({}, true, function(sel) {
-    if (props.mapping.activeSection === 'bonds' || props.mapping.activeSection === 'angles') return
+    if (typeof sel.index === 'undefined') return
     preventBgClick = true
-    if (typeof sel.index !== 'undefined') {
+    // In CG-interaction modes an atom click selects the bead it belongs to, so beads
+    // remain selectable even when their centre sphere is hidden behind an atom sphere.
+    if (props.mapping.activeSection === 'bonds') {
+      props.mapping.toggleBondBead(sel.index)
+    } else if (props.mapping.activeSection === 'angles') {
+      props.mapping.toggleAngleBeadByAtom(sel.index)
+    } else {
       props.mapping.toggleAtom(sel.index, sel.elem || 'Unknown')
-      updateVisualization()
     }
+    updateVisualization()
   })
 
   viewer.zoomTo()
